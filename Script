@@ -2,7 +2,6 @@ local player = game.Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Create main frame with adjusted size
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 200, 0, 300)
 mainFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
@@ -12,7 +11,6 @@ mainFrame.Visible = true
 mainFrame.Active = true
 mainFrame.Draggable = true
 
--- Menu Title
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -21,7 +19,6 @@ titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.Parent = mainFrame
 
--- Create scrolling frame with improved scrolling properties
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, -10, 1, -40)
 scrollingFrame.Position = UDim2.new(0, 5, 0, 35)
@@ -37,7 +34,6 @@ scrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 scrollingFrame.HorizontalScrollBarInset = Enum.ScrollBarInset.None
 scrollingFrame.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
 
--- Create minimized button with adjusted size
 local minimizedButton = Instance.new("TextButton")
 minimizedButton.Size = UDim2.new(0, 200, 0, 30)
 minimizedButton.Position = UDim2.new(0.05, 0, 0.05, 0)
@@ -49,14 +45,12 @@ minimizedButton.Visible = false
 minimizedButton.Active = true
 minimizedButton.Draggable = true
 
--- Create UIListLayout
 local listLayout = Instance.new("UIListLayout")
 listLayout.Parent = scrollingFrame
 listLayout.Padding = UDim.new(0, 4)
 listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Toggle states
 local toggleStates = {
     clickActive = false,
     buyActive = false,
@@ -65,28 +59,13 @@ local toggleStates = {
     autoCraftActive = false,
     autoClaimActive = false,
     autoSpinActive = false,
-    autoGingerBuyActive = false
-}
-
--- Egg toggle states (added all egg types)
-local eggToggleStates = {
-    Basic = false,
-    Spotted = false,
-    Wave = false,
-    Spiral = false,
-    Reindeer = false,
-    Snowglobe = false,
-    Gold = false,
-    Fire = false,
-    Dark = false,
-    Volcano = false,
-    Frozen = false,
-    Beach = false,
+    autoGingerBuyActive = false,
+    reindeerEggActive = false,
+    snowglobeEggActive = false
 }
 
 local currentRebirthValue = 1
 
--- Function to create button
 local function createButton(text, layoutOrder)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(0.95, 0, 0, 30)
@@ -103,7 +82,6 @@ local function createButton(text, layoutOrder)
     return button
 end
 
--- Function to create input field
 local function createInputField(placeholder, layoutOrder)
     local inputBox = Instance.new("TextBox")
     inputBox.Size = UDim2.new(0.95, 0, 0, 25)
@@ -121,13 +99,11 @@ local function createInputField(placeholder, layoutOrder)
     return inputBox
 end
 
--- Toggle button function
 local function toggleButton(button, isActive, activeText, inactiveText)
     button.Text = isActive and activeText or inactiveText
     button.BackgroundColor3 = isActive and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(50, 50, 50)
 end
 
--- Auto features functions
 local function teleportToObjects()
     local storageFolder = workspace.Scripts.CollectGingerbread.Storage
     local player = game.Players.LocalPlayer
@@ -164,13 +140,17 @@ local function autoRebirth()
     end
 end
 
--- Function for auto opening eggs (works for all egg types)
-local function createEggOpeningFunction(eggType)
-    return function()
-        while eggToggleStates[eggType] do
-            game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Unbox"):InvokeServer(eggType, "Triple")
-            task.wait()
-        end
+local function autoOpenReindeerEggs()
+    while toggleStates.reindeerEggActive do
+        game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Unbox"):InvokeServer("Reindeer", "Triple")
+        task.wait()
+    end
+end
+
+local function autoOpenSnowglobeEggs()
+    while toggleStates.snowglobeEggActive do
+        game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Unbox"):InvokeServer("Snowglobe", "Triple")
+        task.wait()
     end
 end
 
@@ -206,34 +186,19 @@ local function autoGingerBuy()
     end
 end
 
--- Create main function buttons
 local teleportButton = createButton("Teleport to Objects (Inactive)", 1)
 local clickButton = createButton("Auto Click", 2)
 local autoBuyButton = createButton("Auto Buy", 3)
 local rebirthInput = createInputField("Enter Rebirth Value", 4)
 local rebirthButton = createButton("Auto Rebirth", 5)
+local reindeerEggButton = createButton("Auto Open Reindeer Eggs", 6)
+local snowglobeEggButton = createButton("Auto Open Snowglobe Eggs", 7)
+local autoCraftButton = createButton("Auto Craft All", 8)
+local autoClaimButton = createButton("Auto Claim", 9)
+local autoSpinButton = createButton("Auto Spin", 10)
+local autoGingerBuyButton = createButton("Auto Ginger Buy", 11)
+local hideButton = createButton("Hide Menu", 12)
 
--- Create egg buttons (one for each egg type)
-local currentLayoutOrder = 6
-local eggButtons = {}
-for eggType, _ in pairs(eggToggleStates) do
-    local button = createButton("Auto Open " .. eggType .. " Eggs", currentLayoutOrder)
-    eggButtons[eggType] = button
-    currentLayoutOrder = currentLayoutOrder + 1
-end
-
--- Create remaining function buttons
-local autoCraftButton = createButton("Auto Craft All", currentLayoutOrder)
-currentLayoutOrder = currentLayoutOrder + 1
-local autoClaimButton = createButton("Auto Claim", currentLayoutOrder)
-currentLayoutOrder = currentLayoutOrder + 1
-local autoSpinButton = createButton("Auto Spin", currentLayoutOrder)
-currentLayoutOrder = currentLayoutOrder + 1
-local autoGingerBuyButton = createButton("Auto Ginger Buy", currentLayoutOrder)
-currentLayoutOrder = currentLayoutOrder + 1
-local hideButton = createButton("Hide Menu", currentLayoutOrder)
-
--- Button click handlers
 teleportButton.MouseButton1Click:Connect(function()
     toggleStates.teleportActive = not toggleStates.teleportActive
     toggleButton(teleportButton, toggleStates.teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
@@ -268,18 +233,17 @@ rebirthButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Set up egg button handlers
-for eggType, button in pairs(eggButtons) do
-    button.MouseButton1Click:Connect(function()
-        eggToggleStates[eggType] = not eggToggleStates[eggType]
-        toggleButton(button, eggToggleStates[eggType], 
-            "Auto Open " .. eggType .. " Eggs (Active)", 
-            "Auto Open " .. eggType .. " Eggs")
-        if eggToggleStates[eggType] then 
-            spawn(createEggOpeningFunction(eggType)) 
-        end
-    end)
-end
+reindeerEggButton.MouseButton1Click:Connect(function()
+    toggleStates.reindeerEggActive = not toggleStates.reindeerEggActive
+    toggleButton(reindeerEggButton, toggleStates.reindeerEggActive, "Auto Open Reindeer Eggs (Active)", "Auto Open Reindeer Eggs")
+    if toggleStates.reindeerEggActive then spawn(autoOpenReindeerEggs) end
+end)
+
+snowglobeEggButton.MouseButton1Click:Connect(function()
+    toggleStates.snowglobeEggActive = not toggleStates.snowglobeEggActive
+    toggleButton(snowglobeEggButton, toggleStates.snowglobeEggActive, "Auto Open Snowglobe Eggs (Active)", "Auto Open Snowglobe Eggs")
+    if toggleStates.snowglobeEggActive then spawn(autoOpenSnowglobeEggs) end
+end)
 
 autoCraftButton.MouseButton1Click:Connect(function()
     toggleStates.autoCraftActive = not toggleStates.autoCraftActive
@@ -305,7 +269,6 @@ autoGingerBuyButton.MouseButton1Click:Connect(function()
     if toggleStates.autoGingerBuyActive then spawn(autoGingerBuy) end
 end)
 
--- Hide/Show functionality
 hideButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     minimizedButton.Visible = true
@@ -318,7 +281,6 @@ minimizedButton.MouseButton1Click:Connect(function()
     mainFrame.Position = minimizedButton.Position
 end)
 
--- Add corner radius to frames
 local function addCornerRadius(instance)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
