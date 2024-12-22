@@ -1,665 +1,263 @@
--- Services
+-- ESP with Mobile Murderer Aimbot Script
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Camera = game.Workspace.CurrentCamera
-
--- Cache services untuk optimasi
-local cached_services = {
-    Players = Players,
-    RunService = RunService,
-    UserInputService = UserInputService
-}
 
 -- Konfigurasi
 local AIMBOT_ENABLED = false
 local TARGET_PART = "HumanoidRootPart"
-local MAX_DISTANCE = 650
+local MAX_DISTANCE = 500
 local SMOOTHNESS = 0.5
-local UPDATE_INTERVAL = 0.1
-local lastUpdate = 0
 
--- Warna untuk setiap peran dan item
+-- Warna untuk setiap peran
 local roleColors = {
-    Sheriff = Color3.fromRGB(173, 216, 230),
+    Sheriff = Color3.fromRGB(0, 0, 255),
     Murder = Color3.fromRGB(255, 0, 0),
-    Innocent = Color3.fromRGB(0, 255, 0),
-    GunDrop = Color3.fromRGB(255, 255, 237)
+    Innocent = Color3.fromRGB(0, 255, 0)
 }
 
--- Cache dan monitoring systems
+-- Cache untuk peran
 local lastValidRoles = {}
 local confirmedMurderer = nil
-local espCache = {}
-local gunDropCache = {}
-local connections = {}
 
--- Role monitoring system
-local roleMonitor = {
-    roles = {},
-    lastUpdate = {},
-    connections = {}
-}
-
--- Utility Functions
-local function safeWait()
-    wait(math.random(1, 3)/10)
-end
-
-local function addRandomOffset(position)
-    return position + Vector3.new(
-        math.random(-1, 1),
-        0,
-        math.random(-1, 1)
-    )
-end
-
-local function variableWait()
-    wait(math.random(8, 15) / 100)
-end
-
-local function addConnection(connection)
-    table.insert(connections, connection)
-end
-
-local function cleanupConnections()
-    for _, connection in ipairs(connections) do
-        connection:Disconnect()
-    end
-    table.clear(connections)
-end
-
--- Helper Functions
-local function formatDistance(distance)
-    return string.format("%.0f", distance/3.571)
-end
-
--- ESP Functions
-local function cleanupDuplicateESP(player)
-    if not player or not player.Character then return end
-    
-    for _, child in pairs(player.Character:GetChildren()) do
-        if child:IsA("BillboardGui") and child.Name == "PlayerESP" then
-            child:Destroy()
-        end
-    end
-    
-    local head = player.Character:FindFirstChild("Head")
-    if head then
-        for _, child in pairs(head:GetChildren()) do
-            if child:IsA("BillboardGui") and child.Name == "PlayerESP" then
-                child:Destroy()
-            end
-        end
-    end
-end
-
-local function shouldUpdateESP(player)
-    if not player.Character then return false end
-    local distance = (player.Character:GetPivot().Position - Camera.CFrame.Position).Magnitude
-    return distance <= MAX_DISTANCE
-end
-
-local function isVisible(part)
-    local ray = Ray.new(Camera.CFrame.Position, part.Position - Camera.CFrame.Position)
-    local hit = workspace:FindPartOnRayWithIgnoreList(ray, {cached_services.Players.LocalPlayer.Character})
-    return hit == part
-end
-
--- Role Detection System
-local function detectRoundState()
-    local lobbyCheck = workspace:FindFirstChild("Lobby") or workspace:FindFirstChild("Intermission")
-    if lobbyCheck then
-        return "Lobby"
-    end
-    return "InGame"
-end
-
-local function monitorBackpack(player)
-    local function checkTools(container)
-        if not container then return end
-        
-        for _, item in pairs(container:GetChildren()) do
-            if item:IsA("Tool") then
-                local itemName = string.lower(item.Name)
-                
-                -- Check Murder weapon
-                if itemName:match("knife") or 
-                   itemName:match("Knife") or 
-                   itemName:match("murder") then
-                    roleMonitor.roles[player] = "Murder"
-                    lastValidRoles[player] = "Murder"
-                    confirmedMurderer = player
-                    return "Murder"
-                end
-                
-                -- Check Sheriff weapon
-                if itemName:match("Gun") or 
-                   itemName:match("gun") or 
-                   itemName:match("sheriff") then
-                    roleMonitor.roles[player] = "Sheriff"
-                    lastValidRoles[player] = "Sheriff"
-                    return "Sheriff"
-                end
-            end
-        end
-    end
-    
-    if player:FindFirstChild("Backpack") then
-        local connection = player.Backpack.ChildAdded:Connect(function(item)
-            checkTools(player.Backpack)
-        end)
-        table.insert(roleMonitor.connections, connection)
-    end
-    
-    if player.Character then
-        local connection = player.Character.ChildAdded:Connect(function(item)
-            checkTools(player.Character)
-        end)
-        table.insert(roleMonitor.connections, connection)
-    end
-end
-
-local function getPlayerRole(player)
-    if not player or not player.Character then return "Unknown Role" end
-    
-    if roleMonitor.roles[player] then
-        return roleMonitor.roles[player]
-    end
-    
-    local function checkContainer(container)
-        if not container then return end
-        
-        for _, item in pairs(container:GetChildren()) do
-            if item:IsA("Tool") then
-                local itemName = string.lower(item.Name)
-                
-                if itemName:match("Knife") or 
-                   itemName:match("blade") or 
-                   itemName:match("murder") then
-                    roleMonitor.roles[player] = "Murder"
-                    lastValidRoles[player] = "Murder"
-                    confirmedMurderer = player
-                    return "Murder"
-                end
-                
-                if itemName:match("Gun") or 
-                   itemName:match("gun") or 
-                   itemName:match("Sheriff") then
-                    roleMonitor.roles[player] = "Sheriff"
-                    lastValidRoles[player] = "Sheriff"
-                    return "Sheriff"
-                end
-            end
-        end
-    end
-    
-    local role = checkContainer(player.Backpack) or checkContainer(player.Character)
-    if role then
-        return role
-    end
-    
-    return lastValidRoles[player] or "Innocent"
-end
-
--- ESP Creation Functions
-local function createPlayerESP(player)
-    if not player or not player.Character then return end
-    
-    cleanupDuplicateESP(player)
-    
-    local esp = Instance.new("BillboardGui")
-    esp.Name = "PlayerESP"
-    esp.Size = UDim2.new(0, 100, 0, 25)
-    esp.AlwaysOnTop = true
-    esp.StudsOffset = Vector3.new(0, 2, 0)
-    esp.MaxDistance = MAX_DISTANCE
-    esp.Adornee = player.Character:FindFirstChild("Head")
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 0.3
-    frame.BorderSizePixel = 0
-    frame.Parent = esp
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.new(1, 1, 1)
-    nameLabel.TextSize = 12
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.Parent = frame
-    
-    espCache[player] = esp
-    return esp, frame, nameLabel
-end
-
-local function createGunDropESP(gunDrop)
-    if not gunDrop or not gunDrop.Parent then return end
-    
-    local existingEsp = gunDropCache[gunDrop]
-    if existingEsp and existingEsp.Parent then
-        existingEsp:Destroy()
-    end
-    
-    local esp = Instance.new("BillboardGui")
-    esp.Name = "GunDropESP"
-    esp.Size = UDim2.new(0, 80, 0, 30)
-    esp.AlwaysOnTop = true
-    esp.StudsOffset = Vector3.new(0, 1, 0)
-    esp.MaxDistance = MAX_DISTANCE
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 0.3
-    frame.BackgroundColor3 = roleColors.GunDrop
-    frame.BorderSizePixel = 0
-    frame.Parent = esp
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.new(0, 0, 0)
-    nameLabel.TextSize = 11
-    nameLabel.Text = "Gun"
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.Parent = frame
-    
-    local distanceLabel = Instance.new("TextLabel")
-    distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    distanceLabel.Position = UDim2.new(0, 0, 0.5, 0)
-    distanceLabel.BackgroundTransparency = 1
-    distanceLabel.TextColor3 = Color3.new(0, 0, 0)
-    distanceLabel.TextSize = 10
-    distanceLabel.Font = Enum.Font.GothamBold
-    distanceLabel.Parent = frame
-    
-    local function teleportToGun()
-        local character = Players.LocalPlayer.Character
-        if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-        
-        local humanoid = character:FindFirstChild("Humanoid")
-        if not humanoid or humanoid.Health <= 0 then return end
-        
-        local originalCFrame = character.HumanoidRootPart.CFrame
-        local originalTick = tick()
-        
-        local targetPos = addRandomOffset(gunDrop.Position) + Vector3.new(0, 3, 0)
-        local startPos = character.HumanoidRootPart.Position
-        
-        for i = 0, 1, 0.1 do
-            if not character or not character:FindFirstChild("HumanoidRootPart") then break end
-            character.HumanoidRootPart.CFrame = CFrame.new(
-                startPos:Lerp(targetPos, i)
-            )
-            variableWait()
-        end
-        
-        safeWait()
-        
-        if tick() - originalTick < 0.3 then
-            local currentPos = character.HumanoidRootPart.Position
-            for i = 0, 1, 0.1 do
-                if not character or not character:FindFirstChild("HumanoidRootPart") then break end
-                character.HumanoidRootPart.CFrame = CFrame.new(
-                    currentPos:Lerp(originalCFrame.Position, i)
-                )
-                variableWait()
-            end
-        end
-    end
-    
-    local updateConnection
-updateConnection = RunService.Heartbeat:Connect(function()
-    if not esp or not esp.Parent or not gunDrop or not gunDrop.Parent then
-        if updateConnection then
-            updateConnection:Disconnect()
-        end
-        if esp and esp.Parent then
-            esp:Destroy()
-        end
-        gunDropCache[gunDrop] = nil
-        return
-    end
-    
-    local character = Players.LocalPlayer.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local distance = (character.HumanoidRootPart.Position - gunDrop.Position).Magnitude
-        distanceLabel.Text = string.format("%.0f", distance/3.571) .. "m"
-    end
-end)
-    
-    local tpButton = Instance.new("TextButton")
-    tpButton.Size = UDim2.new(1, 0, 1, 0)
-    tpButton.BackgroundTransp arency = 1
-    tpButton.Text = ""
-    tpButton.Parent = frame
-    
-    local debounce = false
-    tpButton.MouseButton1Click:Connect(function()
-        if debounce then return end
-        debounce = true
-        teleportToGun()
-        task.wait(1)
-        debounce = false
-    end)
-    
-    esp.Parent = gunDrop
-    gunDropCache[gunDrop] = esp
-    return esp
-end
-
--- UI Creation
+-- Membuat GUI Button untuk Mobile
 local function createMobileButton()
-    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if not playerGui then return end
-    
-    local existingGui = playerGui:FindFirstChild("AimbotGUI")
-    if existingGui then
-        existingGui:Destroy()
-    end
-
     local gui = Instance.new("ScreenGui")
     gui.Name = "AimbotGUI"
     gui.ResetOnSpawn = false
     
-    local success, err = pcall(function()
-        syn = syn or {}
-        if syn and syn.protect_gui then
-            syn.protect_gui(gui)
-        end
-        gui.Parent = playerGui
-    end)
-    
-    if not success then
-        gui.Parent = playerGui
-    end
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 60, 0, 60)
-    frame.Position = UDim2.new(0.9, -30, 0.7, -30)
-    frame.BackgroundTransparency = 1
-    frame.Parent = gui
-    
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 1, 0)
+    button.Size = UDim2.new(0, 80, 0, 80)
+    button.Position = UDim2.new(0.85, 0, 0.6, 0)  -- Posisi di kanan bawah
     button.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
     button.BackgroundTransparency = 0.5
-    button.Text = "Aim\nOFF"
+    button.Text = "Aimbot\nOFF"
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 12
+    button.TextSize = 14
     button.Font = Enum.Font.GothamBold
     button.BorderSizePixel = 2
-    button.Parent = frame
+    button.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    button.Parent = gui
     
+    -- Membuat button berbentuk lingkaran
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = button
     
+    -- Status label untuk menunjukkan target
     local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(0, 100, 0, 20)
-    statusLabel.Position = UDim2.new(0.5, -50, 1, 5)
+    statusLabel.Size = UDim2.new(0, 150, 0, 30)
+    statusLabel.Position = UDim2.new(0.85, -35, 0.7, 0)
     statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "Waiting..."
+    statusLabel.Text = "No Murderer Found"
     statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    statusLabel.TextSize = 12
+    statusLabel.TextSize = 14
     statusLabel.Font = Enum.Font.GothamBold
-    statusLabel.Parent = frame
+    statusLabel.Parent = gui
     
-    button.MouseButton1Click:Connect(function()
+    -- Event untuk toggle aimbot
+    button.TouchTap:Connect(function()
         AIMBOT_ENABLED = not AIMBOT_ENABLED
-        button.Text = AIMBOT_ENABLED and "Aim\nON" or "Aim\nOFF"
+        button.Text = AIMBOT_ENABLED and "Aimbot\nON" or "Aimbot\nOFF"
         button.BackgroundColor3 = AIMBOT_ENABLED and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
     end)
-    return statusLabell
-end
-
--- Aimbot Functions
-local function predictTargetPosition(target)
-    local targetPart = target.Character:FindFirstChild(TARGET_PART)
-    if not targetPart then return end
     
-    local velocity = targetPart.Velocity
-    local prediction = targetPart.Position + (velocity * 0.1)
-    return prediction
+    gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    return statusLabel
 end
 
-local function calculateAimOffset(current, target, smoothness)
-    local delta = target - current
-    return delta * (1 - math.exp(-smoothness * RunService.RenderStepped:Wait()))
+-- Fungsi untuk membuat ESP
+local function createESP(player)
+    local esp = Instance.new("BillboardGui")
+    esp.Name = "ESP"
+    esp.Size = UDim2.new(4, 0, 5.5, 0)
+    esp.AlwaysOnTop = true
+    esp.StudsOffset = Vector3.new(0, 2, 0)
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 0.5
+    frame.BorderSizePixel = 0
+    frame.Parent = esp
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, 0, 0.25, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+    nameLabel.TextScaled = true
+    nameLabel.Parent = esp
+
+    local roleLabel = Instance.new("TextLabel")
+    roleLabel.Size = UDim2.new(1, 0, 0.25, 0)
+    roleLabel.Position = UDim2.new(0, 0, 0.25, 0)
+    roleLabel.BackgroundTransparency = 1
+    roleLabel.TextColor3 = Color3.new(1, 1, 1)
+    roleLabel.TextScaled = true
+    roleLabel.Parent = esp
+
+    return esp, frame, nameLabel, roleLabel
 end
 
-local function getClosestPlayerToMouse()
-    local closestPlayer = nil
-    local shortestDistance = math.huge
-    local mouse = Players.LocalPlayer:GetMouse()
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer and 
-           player.Character and 
-           player.Character:FindFirstChild(TARGET_PART) and
-           player.Character:FindFirstChild("Humanoid") and
-           player.Character.Humanoid.Health > 0 then
-            
-            local targetPart = player.Character[TARGET_PART]
-            local screenPoint = Camera:WorldToScreenPoint(targetPart.Position)
-            local vector = Vector2.new(mouse.X - screenPoint.X, mouse.Y - screenPoint.Y)
-            local distance = vector.Magnitude
-            
-            if distance < shortestDistance then
-                closestPlayer = player
-                shortestDistance = distance
+-- Fungsi untuk mendeteksi peran pemain
+local function detectRole(player)
+    local character = player.Character
+    if character then
+        local tool = character:FindFirstChildOfClass("Tool")
+        if tool then
+            if tool.Name == "Gun" then
+                return "Sheriff"
+            elseif tool.Name == "Knife" then
+                if confirmedMurderer ~= player then
+                    confirmedMurderer = player
+                end
+                return "Murder"
+            elseif tool.Name == "AAAAA" then
+                return "Innocent"
             end
         end
     end
     
-    return closestPlayer
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
+            if item.Name == "Gun" then
+                return "Sheriff"
+            elseif item.Name == "Knife" then
+                if confirmedMurderer ~= player then
+                    confirmedMurderer = player
+                end
+                return "Murder"
+            elseif item.Name == "AAAAA" then
+                return "Innocent"
+            end
+        end
+    end
+    
+    return "Unknown"
 end
 
--- Role System Setup
-local function setupRoleMonitoring()
-    -- Clear existing connections
-    for _, connection in pairs(roleMonitor.connections) do
-        connection:Disconnect()
+-- Fungsi untuk mendapatkan murderer
+local function getMurdererTarget()
+    -- Jika sudah ada murderer yang dikonfirmasi
+    if confirmedMurderer and confirmedMurderer.Character then
+        local character = confirmedMurderer.Character
+        local humanoid = character:FindFirstChild("Humanoid")
+        local head = character:FindFirstChild(TARGET_PART)
+        
+        if humanoid and humanoid.Health > 0 and head then
+            return confirmedMurderer
+        end
     end
-    table.clear(roleMonitor.connections)
     
-    -- Monitor existing players
+    -- Jika belum ada murderer yang dikonfirmasi, cari yang memiliki knife
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= Players.LocalPlayer then
-            monitorBackpack(player)
-            
-            local connection = player.CharacterAdded:Connect(function(char)
-                monitorBackpack(player)
-                task.wait(1)
-                getPlayerRole(player)
-            end)
-            table.insert(roleMonitor.connections, connection)
+            if detectRole(player) == "Murder" then
+                confirmedMurderer = player
+                return player
+            end
         end
     end
     
-    -- Monitor for new players
-    local connection = Players.PlayerAdded:Connect(function(player)
+    return nil
+end
+
+-- Fungsi untuk aim ke target
+local function aimAtTarget(target, statusLabel)
+    if not target then 
+        statusLabel.Text = "No Murderer Found"
+        return 
+    end
+    
+    local character = target.Character
+    if not character then return end
+    
+    local head = character:FindFirstChild(TARGET_PART)
+    if not head then return end
+    
+    statusLabel.Text = "Targeting: " .. target.Name
+    
+    -- Mendapatkan arah ke target
+    local targetPos = head.Position
+    local direction = (targetPos - Camera.CFrame.Position).Unit
+    
+    -- Mengubah camera dengan smoothing
+    local targetCFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction)
+    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
+end
+
+-- Update ESP
+local function updateESP()
+    for _, player in pairs(Players:GetPlayers()) do
         if player ~= Players.LocalPlayer then
-            monitorBackpack(player)
-            
-            local connection = player.CharacterAdded:Connect(function(char)
-                monitorBackpack(player)
-                task.wait(1)
-                getPlayerRole(player)
-            end)
-            table.insert(roleMonitor.connections, connection)
-        end
-    end)
-    table.insert(roleMonitor.connections, connection)
-    
-    -- Monitor round state
-    local function checkRoundState()
-        local state = detectRoundState()
-        if state == "Lobby" then
-            resetRoles()
-        end
-    end
-    
-    local connection = RunService.Heartbeat:Connect(function()
-        if tick() - (roleMonitor.lastUpdate.roundState or 0) >= 1 then
-            roleMonitor.lastUpdate.roundState = tick()
-            checkRoundState()
-        end
-    end)
-    table.insert(roleMonitor.connections, connection)
-end
-
--- Reset and Cleanup Functions
-local function resetRoles()
-    table.clear(lastValidRoles)
-    confirmedMurderer = nil
-    
-    for player, esp in pairs(espCache) do
-        if esp and esp.Parent then
-            esp:Destroy()
-        end
-        cleanupDuplicateESP(player)
-    end
-    table.clear(espCache)
-    
-    for _, esp in pairs(gunDropCache) do
-        if esp and esp.Parent then
-            esp:Destroy()
-        end
-    end
-    table.clear(gunDropCache)
-    table.clear(roleMonitor.roles)
-end
-
-local function cleanup()
-    cleanupConnections()
-    resetRoles()
-    
-    for _, connection in pairs(roleMonitor.connections) do
-        connection:Disconnect()
-    end
-    table.clear(roleMonitor.connections)
-    
-    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if playerGui then
-        local gui = playerGui:FindFirstChild("AimbotGUI")
-        if gui then
-            gui:Destroy()
-        end
-    end
-end
-
--- Main Update Functions
-local function mainUpdate()
-    if not Players.LocalPlayer or not Players.LocalPlayer.Character then return end
-    
-    local currentTick = tick()
-    if currentTick - lastUpdate >= UPDATE_INTERVAL then
-        lastUpdate = currentTick
-        
-        -- Update Player ESP
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= Players.LocalPlayer and 
-               player.Character and 
-               player.Character:FindFirstChild("Head") and
-               shouldUpdateESP(player) then
-                
-                cleanupDuplicateESP(player)
-                
-                local role = getPlayerRole(player)
-                local esp, frame, nameLabel
-                
-                if not espCache[player] or not espCache[player].Parent then
-                    esp, frame, nameLabel = createPlayerESP(player)
-                else
-                    esp = espCache[player]
-                    frame = esp:FindFirstChild("Frame")
-                    nameLabel = frame and frame:FindFirstChild("TextLabel")
-                end
-                
-                if esp and frame and nameLabel then
-                    frame.BackgroundColor3 = roleColors[role] or roleColors.Innocent
-                    nameLabel.Text = string.format("%s\n[%s]", player.Name, role)
-                    esp.Parent = player.Character.Head
-                end
-            end
-        end
-        
-        -- Update Gun Drop ESP
-        local gunDrops = workspace:GetChildren()
-        for _, obj in ipairs(gunDrops) do
-            if obj:IsA("Tool") and 
-               (string.lower(obj.Name):find("gun") or 
-                string.lower(obj.Name):find("revolver")) then
-                createGunDropESP(obj)
-            end
-        end
-    end
-end
-
--- Error Recovery
-local function attemptRecovery()
-    pcall(function()
-        resetRoles()
-        cleanupConnections()
-        setupRoleMonitoring()
-        createMobileButton()
-    end)
-end
-
-local function handleError(err)
-    warn("Error occurred:", err)
-    task.delay(1, attemptRecovery)
-end
-
--- Main Game Loop
-local function gameLoop()
-    local success, error = pcall(function()
-        mainUpdate()
-        
-        if AIMBOT_ENABLED then
-            local target = getClosestPlayerToMouse()
-            if target and target.Character then
-                local targetPart = target.Character:FindFirstChild(TARGET_PART)
-                if targetPart then
-                    local predictedPos = predictTargetPosition(target)
-                    if predictedPos then
-                        local mousePos = Camera:WorldToScreenPoint(predictedPos
+            local character = player.Character
+            if character then
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    local esp = humanoidRootPart:FindFirstChild("ESP")
+                    if not esp then
+                        local newEsp, frame, nameLabel, roleLabel = createESP(player)
+                        newEsp.Parent = humanoidRootPart
+                    end
+                    
+                    local currentEsp = humanoidRootPart:FindFirstChild("ESP")
+                    if currentEsp then
+                        local currentRole = detectRole(player)
                         
-                        if mousePos.Z > 0 then
-                            local currentMousePos = UserInputService:GetMouseLocation()
-                            local targetPos = Vector2.new(mousePos.X, mousePos.Y)
-                            
-                            local offset = calculateAimOffset(currentMousePos, targetPos, SMOOTHNESS)
-                            mousemoverel(offset.X, offset.Y)
+                        if currentRole ~= "Unknown" then
+                            lastValidRoles[player.UserId] = currentRole
+                        end
+                        
+                        local displayRole = currentRole
+                        if currentRole == "Unknown" and lastValidRoles[player.UserId] then
+                            displayRole = lastValidRoles[player.UserId]
+                        end
+                        
+                        local frame = currentEsp:FindFirstChild("Frame")
+                        local nameLabel = currentEsp:FindFirstChild("TextLabel")
+                        local roleLabel = currentEsp:FindFirstChildOfClass("TextLabel")
+                        
+                        if frame and nameLabel and roleLabel then
+                            frame.BackgroundColor3 = roleColors[displayRole] or Color3.new(0.5, 0.5, 0.5)
+                            nameLabel.Text = player.Name
+                            roleLabel.Text = displayRole
                         end
                     end
                 end
             end
         end
-    end)
-    
-    if not success then
-        handleError(error)
     end
 end
 
--- Setup main loop
-local function startScript()
-    setupRoleMonitoring()
-    createMobileButton()
+-- Setup awal
+local statusLabel = createMobileButton()
+
+-- Main update loop
+RunService.RenderStepped:Connect(function()
+    updateESP()
     
-    -- Main update loop
-    RunService.Heartbeat:Connect(gameLoop)
-end
+    if AIMBOT_ENABLED then
+        local target = getMurdererTarget()
+        aimAtTarget(target, statusLabel)
+    end
+end)
 
--- Start the script with error handling
-local success, err = pcall(startScript)
-if not success then
-    handleError(err)
-end
+-- Event cleanup
+Players.PlayerRemoving:Connect(function(player)
+    lastValidRoles[player.UserId] = nil
+    if confirmedMurderer == player then
+        confirmedMurderer = nil
+    end
+end)
 
--- Cleanup on script end
-game:BindToClose(cleanup)
+-- Character monitor
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        lastValidRoles[player.UserId] = nil
+        if confirmedMurderer == player then
+            confirmedMurderer = nil
+        end
+    end)
+end)
