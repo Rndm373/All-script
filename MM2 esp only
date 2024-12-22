@@ -626,8 +626,40 @@ local function gameLoop()
                 if targetPart then
                     local predictedPos = predictTargetPosition(target)
                     if predictedPos then
-                        local mousePos = Camera:WorldToScreenPoint(predictedPos)
+                        local mousePos = Camera:WorldToScreenPoint(predictedPos
                         
                         if mousePos.Z > 0 then
                             local currentMousePos = UserInputService:GetMouseLocation()
-                            local targetPos = Vector2.new(mouseP
+                            local targetPos = Vector2.new(mousePos.X, mousePos.Y)
+                            
+                            local offset = calculateAimOffset(currentMousePos, targetPos, SMOOTHNESS)
+                            mousemoverel(offset.X, offset.Y)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    if not success then
+        handleError(error)
+    end
+end
+
+-- Setup main loop
+local function startScript()
+    setupRoleMonitoring()
+    createMobileButton()
+    
+    -- Main update loop
+    RunService.Heartbeat:Connect(gameLoop)
+end
+
+-- Start the script with error handling
+local success, err = pcall(startScript)
+if not success then
+    handleError(err)
+end
+
+-- Cleanup on script end
+game:BindToClose(cleanup)
