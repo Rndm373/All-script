@@ -1,0 +1,393 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = game.Workspace.CurrentCamera
+
+-- Configuration
+local Config = {
+    AIMBOT_ENABLED = false,
+    TARGET_PART = "HumanoidRootPart", -- Bisa diganti dengan "Head" untuk lebih akurat
+    MAX_DISTANCE = 500,
+    SMOOTHNESS = 0.3, -- Reduced for faster response
+    UPDATE_INTERVAL = 0.1, -- Reduced for more frequent updates
+    FOV = 180, -- FOV
+    PREDICTION_MULTIPLIER = 1.5, -- Untuk memprediksi pergerakan target
+    ROLE_COLORS = {
+        Sheriff = Color3.fromRGB(0, 0, 255),
+        Murder = Color3.fromRGB(255, 0, 0),
+        Innocent = Color3.fromRGB(0, 255, 0),
+        GunDrop = Color3.fromRGB(255, 255, 0)
+    }
+}
+
+-- Cache
+local Cache = {
+    lastUpdate = 0,
+    lastValidRoles = {},
+    confirmedMurderer = nil,
+    espCache = {},
+    gunDropCache = {},
+    connections = {}
+}
+
+-- Helper Functions
+local function safeFunction(fn)
+    return function(...)
+        local success, err = pcall(fn, ...)
+        if not success then
+            warn("Error in function:", err)
+        end
+    end
+end
+
+-- Aimbot Functions
+local function lookAt(position)
+    local localPlayer = Players.LocalPlayer
+    local character = localPlayer.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    local cameraPosition = Camera.CFrame.Position
+    local targetPosition = position
+    
+    -- Calculate direct vector to target
+    local lookVector = (targetPosition - cameraPosition).Unit
+    
+    -- Create new camera CFrame
+    local newCameraCFrame = CFrame.new(cameraPosition, cameraPosition + lookVector)
+    
+    -- Smooth lerp camera
+    Camera.CFrame = Camera.CFrame:Lerp(newCameraCFrame, Config.SMOOTHNESS)
+end
+
+local function isInRange(target)
+    local localPlayer = Players.LocalPlayer
+    local character = localPlayer.Character
+    if not character then return false end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return false end
+    
+    local distance = (target.Position - humanoidRootPart.Position).Magnitude
+    return distance <= Config.MAX_DISTANCE
+end
+
+-- Create Toggle Button GUI
+local function createToggleButton()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "AimbotToggle"
+    ScreenGui.ResetOnSpawn = false
+    
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.Size = UDim2.new(0, 80, 0, 40)
+    ToggleButton.Position = UDim2.new(0.9, -40, 0.5, -20)
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    ToggleButton.Text = "OFF"
+    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleButton.Font = Enum.Font.SourceSansBold
+    ToggleButton.TextSize = 16
+    ToggleButton.BorderSizePixel = 2
+    ToggleButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0.2, 0)
+    UICorner.Parent = ToggleButton
+    
+    local Shadow = Instance.new("ImageLabel")
+    Shadow.Name = "Shadow"
+    Shadow.BackgroundTransparency = 1
+    Shadow.Image = "rbxassetid://1316045217"
+    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    Shadow.ImageTransparency = 0.6
+    Shadow.Size = UDim2.new(1.2, 0, 1.2, 0)
+    Shadow.Position = UDim2.new(-0.1, 0, -0.1, 0)
+    Shadow.ZIndex = ToggleButton.ZIndex - 1
+    Shadow.Parent = ToggleButton
+    
+    ToggleButton.Parent = ScreenGui
+    
+    local function toggleAimbot()
+        Config.AIMBOT_ENABLED = not Config.AIMBOT_ENABLED
+        ToggleButton.Text = Config.AIMBOT_ENABLED and "ON" or "OFF"
+        ToggleButton.BackgroundColor3 = Config.AIMBOT_ENABLED and 
+            Color3.fromRGB(0, 255, 0) or 
+            Color3.fromRGB(255, 0, 0)
+    end
+    
+    ToggleButton.MouseButton1Click:Connect(toggleAimbot)
+    
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.X then
+            toggleAimbot()
+        end
+    end)
+    
+    if Players.LocalPlayer:WaitForChild("PlayerGui") then
+        ScreenGui.Parent = Players.LocalPlayer.PlayerGui
+    end
+end
+
+-- ESP Functions
+local function createPlayerESP(player)
+    if Cache.espCache[player] then return end
+    
+    local esp = Instance.new("BillboardGui")
+    esp.Name = "ESP"
+    esp.Size = UDim2.new(4, 0, 5.5, 0)
+    esp.AlwaysOnTop = true
+    esp.MaxDistance = Config.MAX_DISTANCE
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 2
+    frame.Parent = esp
+    
+    local infoContainer = Instance.new("Frame")
+    infoContainer.Size = UDim2.new(1, 0, 0.2, 0)
+    infoContainer.Position = UDim2.new(0, 0, 0, 0)
+    infoContainer.BackgroundColor3 = Color3.new(0, 0, 0)
+    infoContainer.BackgroundTransparency = 0.2
+    infoContainer.BorderSizePixel = 0
+    infoContainer.Parent = frame
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    nameLabel.Position = UDim2.new(0, 0, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+    nameLabel.TextSize = 14
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.Parent = infoContainer
+    
+    local roleLabel = Instance.new("TextLabel")
+    roleLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    roleLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    roleLabel.BackgroundTransparency = 1
+    roleLabel.Text = "Unknown"
+    roleLabel.TextColor3 = Color3.new(1, 1, 1)
+    roleLabel.TextSize = 14
+    roleLabel.Font = Enum.Font.SourceSansBold
+    roleLabel.Parent = infoContainer
+    
+    Cache.espCache[player] = {
+        esp = esp,
+        frame = frame,
+        nameLabel = nameLabel,
+        roleLabel = roleLabel
+    }
+end
+
+-- Improved Role Detection
+local function detectPlayerRole(player)
+    if not player.Character then return "Unknown" end
+    if not player.Backpack then return "Unknown" end
+    
+    local function hasItem(itemName)
+        return player.Character:FindFirstChild(itemName) or player.Backpack:FindFirstChild(itemName)
+    end
+    
+    if hasItem("Knife") then
+        Cache.confirmedMurderer = player
+        return "Murder"
+    end
+    
+    if hasItem("Gun") or hasItem("Revolver") then
+        return "Sheriff"
+    end
+    
+    if Cache.confirmedMurderer and Cache.confirmedMurderer ~= player then
+        return "Innocent"
+    end
+    
+    return "Unknown"
+end
+
+local function updatePlayerESP(player)
+    local espData = Cache.espCache[player]
+    if not espData then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    local role = detectPlayerRole(player)
+    Cache.lastValidRoles[player] = role
+    
+    if role ~= "Unknown" then
+        espData.frame.BorderColor3 = Config.ROLE_COLORS[role]
+        espData.frame.BackgroundColor3 = Config.ROLE_COLORS[role]
+        espData.roleLabel.Text = role
+    else
+        espData.frame.BorderColor3 = Color3.new(0.7, 0.7, 0.7)
+        espData.frame.BackgroundColor3 = Color3.new(0.7, 0.7, 0.7)
+        espData.roleLabel.Text = "Unknown"
+    end
+    
+    espData.esp.Parent = humanoidRootPart
+end
+
+local function createGunDropESP(gunPart)
+    local esp = Instance.new("BillboardGui")
+    esp.Name = "GunESP"
+    esp.Size = UDim2.new(2, 0, 2, 0)
+    esp.AlwaysOnTop = true
+    esp.MaxDistance = Config.MAX_DISTANCE
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundColor3 = Config.ROLE_COLORS.GunDrop
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 2
+    frame.Parent = esp
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0.3, 0)
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.BackgroundColor3 = Color3.new(0, 0, 0)
+    label.BackgroundTransparency = 0.2
+    label.BorderSizePixel = 0
+    label.Text = "GUN"
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextSize = 14
+    label.Font = Enum.Font.SourceSansBold
+    label.Parent = frame
+    
+    esp.Parent = gunPart
+    Cache.gunDropCache[gunPart] = esp
+end
+
+-- Update Functions
+local function updateGunDrops()
+    for part, esp in pairs(Cache.gunDropCache) do
+        if not part:IsDescendantOf(workspace) then
+            esp:Destroy()
+            Cache.gunDropCache[part] = nil
+        end
+    end
+    
+    for _, descendant in ipairs(workspace:GetDescendants()) do
+        if (descendant.Name == "GunDrop" or descendant.Name == "Gun") 
+            and not descendant:IsDescendantOf(Players.LocalPlayer.Character)
+            and not Cache.gunDropCache[descendant] then
+            createGunDropESP(descendant)
+        end
+    end
+end
+
+-- Event Handlers
+local function onWorkspaceChanged(instance)
+    if instance.Name == "GunDrop" or instance.Name == "Gun" then
+        task.wait(0.1)
+        createGunDropESP(instance)
+    end
+end
+
+local function onPlayerRemoved(player)
+    local espData = Cache.espCache[player]
+    if espData then
+        espData.esp:Destroy()
+        Cache.espCache[player] = nil
+    end
+    Cache.lastValidRoles[player] = nil
+    if Cache.confirmedMurderer == player then
+        Cache.confirmedMurderer = nil
+    end
+end
+
+-- Main Update Loop
+local function mainUpdate()
+    local currentTime = tick()
+    
+    -- Update ESP less frequently
+    if currentTime - Cache.lastUpdate >= Config.UPDATE_INTERVAL then
+        Cache.lastUpdate = currentTime
+        
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= Players.LocalPlayer then
+                createPlayerESP(player)
+                updatePlayerESP(player)
+            end
+        end
+        
+        -- Update gun drops less frequently
+        if currentTime % 1 == 0 then
+            updateGunDrops()
+        end
+    end
+    
+    -- Aimbot runs every frame for smoothness
+    if Config.AIMBOT_ENABLED and Cache.confirmedMurderer then
+        local character = Cache.confirmedMurderer.Character
+        if character then
+            local targetPart = character:FindFirstChild(Config.TARGET_PART)
+            if targetPart and isInRange(targetPart) then
+                -- Get target velocity for prediction
+                local targetVelocity = character:FindFirstChild("Humanoid") and 
+                    character.Humanoid.MoveDirection * character.Humanoid.WalkSpeed or 
+                    Vector3.new(0, 0, 0)
+                
+                -- Predict target position
+                local predictedPosition = targetPart.Position + 
+                    (targetVelocity * Config.PREDICTION_MULTIPLIER)
+                
+                -- Check if target is within FOV
+                local screenPoint = Camera:WorldToScreenPoint(predictedPosition)
+                local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+                local screenPosition = Vector2.new(screenPoint.X, screenPoint.Y)
+                
+                if (screenPosition - screenCenter).Magnitude <= Config.FOV then
+                    lookAt(predictedPosition)
+                end
+            end
+        end
+    end
+end
+
+-- Cleanup Function
+local function cleanup()
+    for _, connection in pairs(Cache.connections) do
+        connection:Disconnect()
+    end
+    Cache.connections = {}
+    
+    for _, espData in pairs(Cache.espCache) do
+        espData.esp:Destroy()
+    end
+    Cache.espCache = {}
+    
+    for _, esp in pairs(Cache.gunDropCache) do
+        esp:Destroy()
+    end
+    Cache.gunDropCache = {}
+end
+
+-- Initialize
+local function init()
+    cleanup()
+    
+    Cache.connections = {
+        RunService.RenderStepped:Connect(safeFunction(mainUpdate)), -- Changed to RenderStepped for smoother updates
+        workspace.DescendantAdded:Connect(safeFunction(onWorkspaceChanged)),
+        Players.PlayerRemoving:Connect(safeFunction(onPlayerRemoved))
+    }
+    
+    createToggleButton()
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            createPlayerESP(player)
+        end
+    end
+    
+    updateGunDrops()
+end
+
+-- Start the script
+init()
