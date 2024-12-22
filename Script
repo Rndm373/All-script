@@ -2,8 +2,9 @@ local player = game.Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Create main frame with adjusted size
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 300)
+mainFrame.Size = UDim2.new(0, 200, 0, 300) -- Reduced height from 480 to 300
 mainFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.Parent = screenGui
@@ -11,14 +12,16 @@ mainFrame.Visible = true
 mainFrame.Active = true
 mainFrame.Draggable = true
 
+-- Menu Title
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "Auto Functions Menu"
+titleLabel.Text = "Rebirth Champion X Menu"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.Parent = mainFrame
 
+-- Create scrolling frame with improved scrolling properties
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, -10, 1, -40)
 scrollingFrame.Position = UDim2.new(0, 5, 0, 35)
@@ -34,6 +37,7 @@ scrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 scrollingFrame.HorizontalScrollBarInset = Enum.ScrollBarInset.None
 scrollingFrame.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
 
+-- Create minimized button with adjusted size
 local minimizedButton = Instance.new("TextButton")
 minimizedButton.Size = UDim2.new(0, 200, 0, 30)
 minimizedButton.Position = UDim2.new(0.05, 0, 0.05, 0)
@@ -45,30 +49,17 @@ minimizedButton.Visible = false
 minimizedButton.Active = true
 minimizedButton.Draggable = true
 
+-- Create UIListLayout with optimized spacing
 local listLayout = Instance.new("UIListLayout")
 listLayout.Parent = scrollingFrame
-listLayout.Padding = UDim.new(0, 4)
+listLayout.Padding = UDim.new(0, 4) -- Reduced padding from 5 to 4
 listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local toggleStates = {
-    clickActive = false,
-    buyActive = false,
-    rebirthActive = false,
-    teleportActive = false,
-    autoCraftActive = false,
-    autoClaimActive = false,
-    autoSpinActive = false,
-    autoGingerBuyActive = false,
-    reindeerEggActive = false,
-    snowglobeEggActive = false
-}
-
-local currentRebirthValue = 1
-
+-- Function to create button with optimized size
 local function createButton(text, layoutOrder)
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0.95, 0, 0, 30)
+    button.Size = UDim2.new(0.95, 0, 0, 30) -- Adjusted size and reduced height from 35 to 30
     button.Text = text
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -82,9 +73,10 @@ local function createButton(text, layoutOrder)
     return button
 end
 
+-- Function to create input field with optimized size
 local function createInputField(placeholder, layoutOrder)
     local inputBox = Instance.new("TextBox")
-    inputBox.Size = UDim2.new(0.95, 0, 0, 25)
+    inputBox.Size = UDim2.new(0.95, 0, 0, 25) -- Adjusted size and reduced height from 30 to 25
     inputBox.Text = "1"
     inputBox.PlaceholderText = placeholder
     inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -99,17 +91,98 @@ local function createInputField(placeholder, layoutOrder)
     return inputBox
 end
 
+-- Create minimized button
+local minimizedButton = Instance.new("TextButton")
+minimizedButton.Size = UDim2.new(0, 200, 0, 30)
+minimizedButton.Position = UDim2.new(0.05, 0, 0.05, 0)
+minimizedButton.Text = "Show Menu"
+minimizedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizedButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+minimizedButton.Parent = screenGui
+minimizedButton.Visible = false
+minimizedButton.Active = true
+minimizedButton.Draggable = true
+
+-- Create UIListLayout for automatic button positioning
+local listLayout = Instance.new("UIListLayout")
+listLayout.Parent = scrollingFrame
+listLayout.Padding = UDim.new(0, 5)
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Toggle states
+local clickActive, buyActive, rebirthActive, teleportActive = false, false, false, false
+local autoEggsActive, autoCraftActive, autoClaimActive = false, false, false
+local autoSpinActive, autoGingerBuyActive = false, false
+local currentRebirthValue = 1
+
+-- Function to create button
+local function createButton(text, layoutOrder)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0.9, 0, 0, 35)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.LayoutOrder = layoutOrder
+    button.Parent = scrollingFrame
+    
+    -- Add corner radius
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = button
+    
+    return button
+end
+
+-- Function to create input field
+local function createInputField(placeholder, layoutOrder)
+    local inputBox = Instance.new("TextBox")
+    inputBox.Size = UDim2.new(0.9, 0, 0, 30)
+    inputBox.Text = "1"
+    inputBox.PlaceholderText = placeholder
+    inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    inputBox.LayoutOrder = layoutOrder
+    inputBox.Parent = scrollingFrame
+    
+    -- Add corner radius
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = inputBox
+    
+    return inputBox
+end
+
+-- Create buttons with layout orders
+local teleportButton = createButton("Teleport to Objects (Inactive)", 1)
+local clickButton = createButton("Auto Click", 2)
+local autoBuyButton = createButton("Auto Buy rebirth", 3)
+local rebirthInput = createInputField("Use Remote spy for value, 4)
+local rebirthButton = createButton("Auto Rebirth", 5)
+local autoEggsButton = createButton("Auto Open Eggs", 6)
+local autoCraftButton = createButton("Auto Craft Pet", 7)
+local autoClaimButton = createButton("Auto Claim", 8)
+local autoSpinButton = createButton("Auto Spin GingerBread", 9)
+local autoGingerBuyButton = createButton("Auto Buy ginger shop", 10)
+local hideButton = createButton("Hide Menu", 11)
+
+-- Toggle button function
 local function toggleButton(button, isActive, activeText, inactiveText)
     button.Text = isActive and activeText or inactiveText
     button.BackgroundColor3 = isActive and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(50, 50, 50)
 end
 
+-- Auto features functions
 local function teleportToObjects()
     local storageFolder = workspace.Scripts.CollectGingerbread.Storage
     local player = game.Players.LocalPlayer
     local storageItems = storageFolder:GetChildren()
     
-    if #storageItems == 0 then return end
+    if #storageItems == 0 then
+        teleportButton.Text = "Teleport to Objects (Inactive)"
+        teleportButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        return
+    end
     
     for _, storageItem in pairs(storageItems) do
         if storageItem.PrimaryPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
@@ -120,51 +193,44 @@ local function teleportToObjects()
 end
 
 local function autoClick()
-    while toggleStates.clickActive do
+    while clickActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Click4"):FireServer()
         task.wait()
     end
 end
 
 local function autoBuy()
-    while toggleStates.buyActive do
+    while buyActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Upgrade"):InvokeServer("RebirthButtons")
         task.wait()
     end
 end
 
 local function autoRebirth()
-    while toggleStates.rebirthActive do
+    while rebirthActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Rebirth"):FireServer(currentRebirthValue)
         task.wait()
     end
 end
 
-local function autoOpenReindeerEggs()
-    while toggleStates.reindeerEggActive do
+local function autoOpenEggs()
+    while autoEggsActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Unbox"):InvokeServer("Reindeer", "Triple")
         task.wait()
     end
 end
 
-local function autoOpenSnowglobeEggs()
-    while toggleStates.snowglobeEggActive do
-        game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Unbox"):InvokeServer("Snowglobe", "Triple")
-        task.wait()
-    end
-end
-
 local function autoCraftAll()
-    while toggleStates.autoCraftActive do
+    while autoCraftActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Request"):InvokeServer("CraftAll", {})
         task.wait()
     end
 end
 
 local function autoClaim()
-    while toggleStates.autoClaimActive do
+    while autoClaimActive do
         for i = 1, 12 do
-            if not toggleStates.autoClaimActive then break end
+            if not autoClaimActive then break end
             game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("ClaimPlaytimeReward"):InvokeServer(i)
             task.wait(1)
         end
@@ -173,38 +239,26 @@ local function autoClaim()
 end
 
 local function autoSpin()
-    while toggleStates.autoSpinActive do
+    while autoSpinActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("GingerbreadWheel"):InvokeServer()
         task.wait()
     end
 end
 
 local function autoGingerBuy()
-    while toggleStates.autoGingerBuyActive do
+    while autoGingerBuyActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("BuyGingerbreadPassTier"):InvokeServer()
         task.wait()
     end
 end
 
-local teleportButton = createButton("Teleport to Objects (Inactive)", 1)
-local clickButton = createButton("Auto Click", 2)
-local autoBuyButton = createButton("Auto Buy", 3)
-local rebirthInput = createInputField("Enter Rebirth Value", 4)
-local rebirthButton = createButton("Auto Rebirth", 5)
-local reindeerEggButton = createButton("Auto Open Reindeer Eggs", 6)
-local snowglobeEggButton = createButton("Auto Open Snowglobe Eggs", 7)
-local autoCraftButton = createButton("Auto Craft All", 8)
-local autoClaimButton = createButton("Auto Claim", 9)
-local autoSpinButton = createButton("Auto Spin", 10)
-local autoGingerBuyButton = createButton("Auto Ginger Buy", 11)
-local hideButton = createButton("Hide Menu", 12)
-
+-- Button click handlers
 teleportButton.MouseButton1Click:Connect(function()
-    toggleStates.teleportActive = not toggleStates.teleportActive
-    toggleButton(teleportButton, toggleStates.teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
-    if toggleStates.teleportActive then
+    teleportActive = not teleportActive
+    toggleButton(teleportButton, teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
+    if teleportActive then
         spawn(function()
-            while toggleStates.teleportActive do
+            while teleportActive do
                 teleportToObjects()
                 task.wait(1)
             end
@@ -213,74 +267,72 @@ teleportButton.MouseButton1Click:Connect(function()
 end)
 
 clickButton.MouseButton1Click:Connect(function()
-    toggleStates.clickActive = not toggleStates.clickActive
-    toggleButton(clickButton, toggleStates.clickActive, "Auto Click (Active)", "Auto Click (Inactive)")
-    if toggleStates.clickActive then spawn(autoClick) end
+    clickActive = not clickActive
+    toggleButton(clickButton, clickActive, "Auto Click (Active)", "Auto Click (Inactive)")
+    if clickActive then spawn(autoClick) end
 end)
 
 autoBuyButton.MouseButton1Click:Connect(function()
-    toggleStates.buyActive = not toggleStates.buyActive
-    toggleButton(autoBuyButton, toggleStates.buyActive, "Auto Buy (Active)", "Auto Buy (Inactive)")
-    if toggleStates.buyActive then spawn(autoBuy) end
+    buyActive = not buyActive
+    toggleButton(autoBuyButton, buyActive, "Auto Buy (Active)", "Auto Buy (Inactive)")
+    if buyActive then spawn(autoBuy) end
 end)
 
 rebirthButton.MouseButton1Click:Connect(function()
-    toggleStates.rebirthActive = not toggleStates.rebirthActive
-    toggleButton(rebirthButton, toggleStates.rebirthActive, "Auto Rebirth (Active)", "Auto Rebirth (Inactive)")
-    if toggleStates.rebirthActive then 
+    rebirthActive = not rebirthActive
+    toggleButton(rebirthButton, rebirthActive, "Auto Rebirth (Active)", "Auto Rebirth (Inactive)")
+    if rebirthActive then 
         currentRebirthValue = tonumber(rebirthInput.Text) or 1
         spawn(autoRebirth) 
     end
 end)
 
-reindeerEggButton.MouseButton1Click:Connect(function()
-    toggleStates.reindeerEggActive = not toggleStates.reindeerEggActive
-    toggleButton(reindeerEggButton, toggleStates.reindeerEggActive, "Auto Open Reindeer Eggs (Active)", "Auto Open Reindeer Eggs")
-    if toggleStates.reindeerEggActive then spawn(autoOpenReindeerEggs) end
-end)
-
-snowglobeEggButton.MouseButton1Click:Connect(function()
-    toggleStates.snowglobeEggActive = not toggleStates.snowglobeEggActive
-    toggleButton(snowglobeEggButton, toggleStates.snowglobeEggActive, "Auto Open Snowglobe Eggs (Active)", "Auto Open Snowglobe Eggs")
-    if toggleStates.snowglobeEggActive then spawn(autoOpenSnowglobeEggs) end
+autoEggsButton.MouseButton1Click:Connect(function()
+    autoEggsActive = not autoEggsActive
+    toggleButton(autoEggsButton, autoEggsActive, "Auto Open Eggs (Active)", "Auto Open Eggs (Inactive)")
+    if autoEggsActive then spawn(autoOpenEggs) end
 end)
 
 autoCraftButton.MouseButton1Click:Connect(function()
-    toggleStates.autoCraftActive = not toggleStates.autoCraftActive
-    toggleButton(autoCraftButton, toggleStates.autoCraftActive, "Auto Craft All (Active)", "Auto Craft All (Inactive)")
-    if toggleStates.autoCraftActive then spawn(autoCraftAll) end
+    autoCraftActive = not autoCraftActive
+    toggleButton(autoCraftButton, autoCraftActive, "Auto Craft All (Active)", "Auto Craft All (Inactive)")
+    if autoCraftActive then spawn(autoCraftAll) end
 end)
 
 autoClaimButton.MouseButton1Click:Connect(function()
-    toggleStates.autoClaimActive = not toggleStates.autoClaimActive
-    toggleButton(autoClaimButton, toggleStates.autoClaimActive, "Auto Claim (Active)", "Auto Claim (Inactive)")
-    if toggleStates.autoClaimActive then spawn(autoClaim) end
+    autoClaimActive = not autoClaimActive
+    toggleButton(autoClaimButton, autoClaimActive, "Auto Claim (Active)", "Auto Claim (Inactive)")
+    if autoClaimActive then spawn(autoClaim) end
 end)
 
 autoSpinButton.MouseButton1Click:Connect(function()
-    toggleStates.autoSpinActive = not toggleStates.autoSpinActive
-    toggleButton(autoSpinButton, toggleStates.autoSpinActive, "Auto Spin (Active)", "Auto Spin (Inactive)")
-    if toggleStates.autoSpinActive then spawn(autoSpin) end
+    autoSpinActive = not autoSpinActive
+    toggleButton(autoSpinButton, autoSpinActive, "Auto Spin (Active)", "Auto Spin (Inactive)")
+    if autoSpinActive then spawn(autoSpin) end
 end)
 
 autoGingerBuyButton.MouseButton1Click:Connect(function()
-    toggleStates.autoGingerBuyActive = not toggleStates.autoGingerBuyActive
-    toggleButton(autoGingerBuyButton, toggleStates.autoGingerBuyActive, "Auto Ginger Buy (Active)", "Auto Ginger Buy (Inactive)")
-    if toggleStates.autoGingerBuyActive then spawn(autoGingerBuy) end
+    autoGingerBuyActive = not autoGingerBuyActive
+    toggleButton(autoGingerBuyButton, autoGingerBuyActive, "Auto Ginger Buy (Active)", "Auto Ginger Buy (Inactive)")
+    if autoGingerBuyActive then spawn(autoGingerBuy) end
 end)
 
+-- Hide/Show functionality
 hideButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     minimizedButton.Visible = true
+    -- Transfer position when hiding
     minimizedButton.Position = mainFrame.Position
 end)
 
 minimizedButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = true
     minimizedButton.Visible = false
+    -- Transfer position when showing
     mainFrame.Position = minimizedButton.Position
 end)
 
+-- Add corner radius to frames
 local function addCornerRadius(instance)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
