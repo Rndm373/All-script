@@ -3,15 +3,14 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = game.Workspace.CurrentCamera
 
--- Configuration
 local Config = {
     AIMBOT_ENABLED = false,
-    TARGET_PART = "HumanoidRootPart", -- Bisa diganti dengan "Head" untuk lebih akurat
+    TARGET_PART = "HumanoidRootPart",
     MAX_DISTANCE = 500,
-    SMOOTHNESS = 0.3, -- Reduced for faster response
-    UPDATE_INTERVAL = 0.1, -- Reduced for more frequent updates
-    FOV = 180, -- FOV
-    PREDICTION_MULTIPLIER = 1.5, -- Untuk memprediksi pergerakan target
+    SMOOTHNESS = 0.3,
+    UPDATE_INTERVAL = 0.1,
+    FOV = 180,
+    PREDICTION_MULTIPLIER = 1.5,
     ROLE_COLORS = {
         Sheriff = Color3.fromRGB(0, 0, 255),
         Murder = Color3.fromRGB(255, 0, 0),
@@ -20,7 +19,6 @@ local Config = {
     }
 }
 
--- Cache
 local Cache = {
     lastUpdate = 0,
     lastValidRoles = {},
@@ -30,7 +28,7 @@ local Cache = {
     connections = {}
 }
 
--- Helper Functions
+-- Utility Functions
 local function safeFunction(fn)
     return function(...)
         local success, err = pcall(fn, ...)
@@ -40,30 +38,32 @@ local function safeFunction(fn)
     end
 end
 
--- Aimbot Functions
-local function lookAt(position)
-    local localPlayer = Players.LocalPlayer
-    local character = localPlayer.Character
-    if not character then return end
+-- Role Detection Functions
+local function isMurderer(player)
+    if not player or not player.Character then return false end
+    if not player.Backpack then return false end
     
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if not humanoidRootPart then return end
-    
-    local cameraPosition = Camera.CFrame.Position
-    local targetPosition = position
-    
-    -- Calculate direct vector to target
-    local lookVector = (targetPosition - cameraPosition).Unit
-    
-    -- Create new camera CFrame
-    local newCameraCFrame = CFrame.new(cameraPosition, cameraPosition + lookVector)
-    
-    -- Smooth lerp camera
-    Camera.CFrame = Camera.CFrame:Lerp(newCameraCFrame, Config.SMOOTHNESS)
+    local hasKnifeInBackpack = player.Backpack:FindFirstChild("Knife")
+    local hasKnifeInCharacter = player.Character:FindFirstChild("Knife")
+    return hasKnifeInBackpack or hasKnifeInCharacter
 end
 
+local function findMurderer()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer and isMurderer(player) then
+            return player
+        end
+    end
+    return nil
+end
+
+-- Aimbot Functions
 local function isInRange(target)
+    if not target then return false end
+    
     local localPlayer = Players.LocalPlayer
+    if not localPlayer then return false end
+    
     local character = localPlayer.Character
     if not character then return false end
     
@@ -74,16 +74,50 @@ local function isInRange(target)
     return distance <= Config.MAX_DISTANCE
 end
 
--- Create Toggle Button GUI
+local function lookAt(position)
+    local localPlayer = Players.LocalPlayer
+    if not localPlayer then return end
+    
+    local character = localPlayer.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    -- Get current mouse position and check FOV
+    local mouseLocation = UserInputService:GetMouseLocation()
+    local targetScreenPosition, isOnScreen = Camera:WorldToScreenPoint(position)
+    
+    if not isOnScreen then return end
+    
+    -- Calculate distance from cursor to target
+    local distanceFromCursor = (Vector2.new(mouseLocation.X, mouseLocation.Y) - 
+                               Vector2.new(targetScreenPosition.X, targetScreenPosition.Y)).Magnitude
+    
+    if distanceFromCursor > Config.FOV then return end
+    
+    -- Calculate aim direction with smoothing
+    local targetPosition = position
+    local cameraPosition = Camera.CFrame.Position
+    local lookVector = (targetPosition - cameraPosition).Unit
+    
+    local currentCFrame = Camera.CFrame
+    local targetCFrame = CFrame.new(cameraPosition, targetPosition)
+    local smoothCFrame = currentCFrame:Lerp(targetCFrame, Config.SMOOTHNESS)
+    
+    Camera.CFrame = smoothCFrame
+end
+
+-- UI Functions
 local function createToggleButton()
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "AimbotToggle"
     ScreenGui.ResetOnSpawn = false
-    
+
     local ToggleButton = Instance.new("TextButton")
     ToggleButton.Name = "ToggleButton"
-    ToggleButton.Size = UDim2.new(0, 80, 0, 40)
-    ToggleButton.Position = UDim2.new(0.9, -40, 0.5, -20)
+    ToggleButton.Size = UDim2.new(0, 150, 0, 50)
+    ToggleButton.Position = UDim2.new(1, -200, 0, 50)
     ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     ToggleButton.Text = "OFF"
     ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -91,11 +125,12 @@ local function createToggleButton()
     ToggleButton.TextSize = 16
     ToggleButton.BorderSizePixel = 2
     ToggleButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    
+    ToggleButton.Parent = ScreenGui
+
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0.2, 0)
     UICorner.Parent = ToggleButton
-    
+
     local Shadow = Instance.new("ImageLabel")
     Shadow.Name = "Shadow"
     Shadow.BackgroundTransparency = 1
@@ -106,9 +141,7 @@ local function createToggleButton()
     Shadow.Position = UDim2.new(-0.1, 0, -0.1, 0)
     Shadow.ZIndex = ToggleButton.ZIndex - 1
     Shadow.Parent = ToggleButton
-    
-    ToggleButton.Parent = ScreenGui
-    
+
     local function toggleAimbot()
         Config.AIMBOT_ENABLED = not Config.AIMBOT_ENABLED
         ToggleButton.Text = Config.AIMBOT_ENABLED and "ON" or "OFF"
@@ -116,7 +149,7 @@ local function createToggleButton()
             Color3.fromRGB(0, 255, 0) or 
             Color3.fromRGB(255, 0, 0)
     end
-    
+
     ToggleButton.MouseButton1Click:Connect(toggleAimbot)
     
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -124,7 +157,7 @@ local function createToggleButton()
             toggleAimbot()
         end
     end)
-    
+
     if Players.LocalPlayer:WaitForChild("PlayerGui") then
         ScreenGui.Parent = Players.LocalPlayer.PlayerGui
     end
@@ -139,13 +172,13 @@ local function createPlayerESP(player)
     esp.Size = UDim2.new(4, 0, 5.5, 0)
     esp.AlwaysOnTop = true
     esp.MaxDistance = Config.MAX_DISTANCE
-    
+
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, 0, 1, 0)
     frame.BackgroundTransparency = 0.2
     frame.BorderSizePixel = 2
     frame.Parent = esp
-    
+
     local infoContainer = Instance.new("Frame")
     infoContainer.Size = UDim2.new(1, 0, 0.2, 0)
     infoContainer.Position = UDim2.new(0, 0, 0, 0)
@@ -153,7 +186,7 @@ local function createPlayerESP(player)
     infoContainer.BackgroundTransparency = 0.2
     infoContainer.BorderSizePixel = 0
     infoContainer.Parent = frame
-    
+
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
     nameLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -163,7 +196,7 @@ local function createPlayerESP(player)
     nameLabel.TextSize = 14
     nameLabel.Font = Enum.Font.SourceSansBold
     nameLabel.Parent = infoContainer
-    
+
     local roleLabel = Instance.new("TextLabel")
     roleLabel.Size = UDim2.new(1, 0, 0.5, 0)
     roleLabel.Position = UDim2.new(0, 0, 0.5, 0)
@@ -173,7 +206,7 @@ local function createPlayerESP(player)
     roleLabel.TextSize = 14
     roleLabel.Font = Enum.Font.SourceSansBold
     roleLabel.Parent = infoContainer
-    
+
     Cache.espCache[player] = {
         esp = esp,
         frame = frame,
@@ -182,13 +215,42 @@ local function createPlayerESP(player)
     }
 end
 
--- Improved Role Detection
+local function createGunDropESP(part)
+    if Cache.gunDropCache[part] then return end
+    
+    local esp = Instance.new("BillboardGui")
+    esp.Name = "GunESP"
+    esp.Size = UDim2.new(2, 0, 2, 0)
+    esp.AlwaysOnTop = true
+    esp.MaxDistance = Config.MAX_DISTANCE
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundColor3 = Config.ROLE_COLORS.GunDrop
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 2
+    frame.Parent = esp
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0.25, 0)
+    label.Position = UDim2.new(0, 0, -0.25, 0)
+    label.BackgroundTransparency = 1
+    label.Text = "GUN"
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextSize = 14
+    label.Font = Enum.Font.SourceSansBold
+    label.Parent = frame
+    
+    esp.Parent = part
+    Cache.gunDropCache[part] = esp
+end
+
 local function detectPlayerRole(player)
-    if not player.Character then return "Unknown" end
-    if not player.Backpack then return "Unknown" end
+    if not player.Character or not player.Backpack then return "Unknown" end
     
     local function hasItem(itemName)
-        return player.Character:FindFirstChild(itemName) or player.Backpack:FindFirstChild(itemName)
+        return player.Character:FindFirstChild(itemName) or 
+               player.Backpack:FindFirstChild(itemName)
     end
     
     if hasItem("Knife") then
@@ -233,37 +295,6 @@ local function updatePlayerESP(player)
     espData.esp.Parent = humanoidRootPart
 end
 
-local function createGunDropESP(gunPart)
-    local esp = Instance.new("BillboardGui")
-    esp.Name = "GunESP"
-    esp.Size = UDim2.new(2, 0, 2, 0)
-    esp.AlwaysOnTop = true
-    esp.MaxDistance = Config.MAX_DISTANCE
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Config.ROLE_COLORS.GunDrop
-    frame.BackgroundTransparency = 0.2
-    frame.BorderSizePixel = 2
-    frame.Parent = esp
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0.3, 0)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundColor3 = Color3.new(0, 0, 0)
-    label.BackgroundTransparency = 0.2
-    label.BorderSizePixel = 0
-    label.Text = "GUN"
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextSize = 14
-    label.Font = Enum.Font.SourceSansBold
-    label.Parent = frame
-    
-    esp.Parent = gunPart
-    Cache.gunDropCache[gunPart] = esp
-end
-
--- Update Functions
 local function updateGunDrops()
     for part, esp in pairs(Cache.gunDropCache) do
         if not part:IsDescendantOf(workspace) then
@@ -282,13 +313,6 @@ local function updateGunDrops()
 end
 
 -- Event Handlers
-local function onWorkspaceChanged(instance)
-    if instance.Name == "GunDrop" or instance.Name == "Gun" then
-        task.wait(0.1)
-        createGunDropESP(instance)
-    end
-end
-
 local function onPlayerRemoved(player)
     local espData = Cache.espCache[player]
     if espData then
@@ -301,11 +325,16 @@ local function onPlayerRemoved(player)
     end
 end
 
+local function onWorkspaceChanged(instance)
+    if instance.Name == "GunDrop" or instance.Name == "Gun" then
+        createGunDropESP(instance)
+    end
+end
+
 -- Main Update Loop
 local function mainUpdate()
     local currentTime = tick()
     
-    -- Update ESP less frequently
     if currentTime - Cache.lastUpdate >= Config.UPDATE_INTERVAL then
         Cache.lastUpdate = currentTime
         
@@ -316,33 +345,29 @@ local function mainUpdate()
             end
         end
         
-        -- Update gun drops less frequently
         if currentTime % 1 == 0 then
             updateGunDrops()
         end
     end
     
-    -- Aimbot runs every frame for smoothness
-    if Config.AIMBOT_ENABLED and Cache.confirmedMurderer then
-        local character = Cache.confirmedMurderer.Character
-        if character then
-            local targetPart = character:FindFirstChild(Config.TARGET_PART)
-            if targetPart and isInRange(targetPart) then
-                -- Get target velocity for prediction
-                local targetVelocity = character:FindFirstChild("Humanoid") and 
-                    character.Humanoid.MoveDirection * character.Humanoid.WalkSpeed or 
-                    Vector3.new(0, 0, 0)
+    if Config.AIMBOT_ENABLED then
+        local murderer = findMurderer()
+        if murderer and murderer.Character then
+            local targetPart = murderer.Character:FindFirstChild(Config.TARGET_PART)
+            local humanoid = murderer.Character:FindFirstChild("Humanoid")
+            
+            if targetPart and humanoid and humanoid.Health > 0 and isInRange(targetPart) then
+                local velocity = humanoid.MoveDirection * humanoid.WalkSpeed
+                local predictedPosition = targetPart.Position + (velocity * Config.PREDICTION_MULTIPLIER)
                 
-                -- Predict target position
-                local predictedPosition = targetPart.Position + 
-                    (targetVelocity * Config.PREDICTION_MULTIPLIER)
+                local ray = Ray.new(Camera.CFrame.Position, 
+                                  (predictedPosition - Camera.CFrame.Position).Unit * Config.MAX_DISTANCE)
+                local hit, hitPosition = workspace:FindPartOnRayWithIgnoreList(
+                    ray, 
+                    {Players.LocalPlayer.Character}
+                )
                 
-                -- Check if target is within FOV
-                local screenPoint = Camera:WorldToScreenPoint(predictedPosition)
-                local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-                local screenPosition = Vector2.new(screenPoint.X, screenPoint.Y)
-                
-                if (screenPosition - screenCenter).Magnitude <= Config.FOV then
+                if hit and (hitPosition - predictedPosition).Magnitude < 10 then
                     lookAt(predictedPosition)
                 end
             end
@@ -350,44 +375,14 @@ local function mainUpdate()
     end
 end
 
--- Cleanup Function
-local function cleanup()
-    for _, connection in pairs(Cache.connections) do
-        connection:Disconnect()
-    end
-    Cache.connections = {}
-    
-    for _, espData in pairs(Cache.espCache) do
-        espData.esp:Destroy()
-    end
-    Cache.espCache = {}
-    
-    for _, esp in pairs(Cache.gunDropCache) do
-        esp:Destroy()
-    end
-    Cache.gunDropCache = {}
-end
-
--- Initialize
 local function init()
-    cleanup()
-    
+    createToggleButton()
+
     Cache.connections = {
-        RunService.RenderStepped:Connect(safeFunction(mainUpdate)), -- Changed to RenderStepped for smoother updates
+        RunService.RenderStepped:Connect(safeFunction(mainUpdate)),
         workspace.DescendantAdded:Connect(safeFunction(onWorkspaceChanged)),
         Players.PlayerRemoving:Connect(safeFunction(onPlayerRemoved))
     }
-    
-    createToggleButton()
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            createPlayerESP(player)
-        end
-    end
-    
-    updateGunDrops()
 end
 
--- Start the script
 init()
