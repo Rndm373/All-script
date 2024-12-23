@@ -627,7 +627,68 @@ local success, err = pcall(function()
             task.spawn(function()
                 local esp = createPlayerESP(player)
                 if esp and player.Character then
-esp.Parent = player.Character.Head
+       local humanoid = player.Character:WaitForChild("Humanoid")
+        humanoid.Died:Connect(function()
+            checkPlayerDeath(player)
+        end)
+    end
+    
+    player.CharacterAdded:Connect(function(character)
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.Died:Connect(function()
+            checkPlayerDeath(player)
+        end)
+    end)
+end
+
+-- Cleanup function
+local function cleanup()
+    resetRoles()
+    
+    -- Disconnect all connections
+    for _, connection in pairs(getconnections(RunService.Heartbeat)) do
+        connection:Disconnect()
+    end
+    for _, connection in pairs(getconnections(RunService.RenderStepped)) do
+        connection:Disconnect()
+    end
+    for _, connection in pairs(getconnections(workspace.DescendantAdded)) do
+        connection:Disconnect()
+    end
+    for _, connection in pairs(getconnections(workspace.DescendantRemoving)) do
+        connection:Disconnect()
+    end
+    
+    -- Remove GUI
+    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+    if playerGui then
+        local gui = playerGui:FindFirstChild("AimbotGUI")
+        if gui then
+            gui:Destroy()
+        end
+    end
+    
+    -- Clear all caches
+    table.clear(lastValidRoles)
+    table.clear(espCache)
+    table.clear(gunDropCache)
+    confirmedMurderer = nil
+    currentSheriff = nil
+    roundInProgress = false
+end
+
+-- Handle script initialization errors
+local success, err = pcall(function()
+    -- Initial setup
+    resetRoles()
+    
+    -- Create initial ESP for existing players
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            task.spawn(function()
+                local esp = createPlayerESP(player)
+                if esp and player.Character then
+                    esp.Parent = player.Character.Head
                 end
             end)
         end
@@ -656,4 +717,3 @@ if game:GetService("CoreGui") then
         end
     end)
 end
-       
