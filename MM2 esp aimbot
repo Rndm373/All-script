@@ -1,719 +1,243 @@
+
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = game.Workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
 
--- Konfigurasi
+-- Configure
 local AIMBOT_ENABLED = false
-local TARGET_PART = "HumanoidRootPart"
+local TARGET_PART = "HumanoidRootPart" -- U can xhange to "Head"
 local MAX_DISTANCE = 500
 local SMOOTHNESS = 0.5
-local UPDATE_INTERVAL = 0.1
-local lastUpdate = 0
 
--- Tambahan variabel tracking untuk Sheriff dan Murder
-local currentSheriff = nil
-local currentMurder = nil
-local localPlayerRole = "Innocent"
-local roundInProgress = false
-
--- Warna untuk setiap peran dan item
 local roleColors = {
     Sheriff = Color3.fromRGB(0, 0, 255),
     Murder = Color3.fromRGB(255, 0, 0),
-    Innocent = Color3.fromRGB(0, 255, 0),
-    GunDrop = Color3.fromRGB(255, 255, 0)
+    Innocent = Color3.fromRGB(0, 255, 0)
 }
 
--- Cache untuk peran dan ESP
 local lastValidRoles = {}
 local confirmedMurderer = nil
-local espCache = {}
-local gunDropCache = {}
 
--- Function untuk membuat ESP Player
-local function createPlayerESP(player)
-    if not player or not player.Character then return end
-    
-    local esp = Instance.new("BillboardGui")
-    esp.Name = "PlayerESP"
-    esp.Size = UDim2.new(0, 80, 0, 30)
-    esp.AlwaysOnTop = true
-    esp.StudsOffset = Vector3.new(0, 1, 0)
-    esp.MaxDistance = MAX_DISTANCE
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 0.3
-    frame.BackgroundColor3 = roleColors.Innocent
-    frame.BorderSizePixel = 0
-    frame.Parent = esp
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.new(0, 0, 0)
-    nameLabel.TextSize = 11
-    nameLabel.Text = player.Name:sub(1, 8) .. (#player.Name > 8 and ".." or "") .. "\nInnocent"
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.Parent = frame
-    
-    espCache[player] = esp
-    return esp, frame, nameLabel
-end
-
--- Function to check local player's role
-local function checkLocalPlayerRole()
-    if not LocalPlayer or not LocalPlayer.Character then return "Innocent" end
-    
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    local character = LocalPlayer.Character
-    
-    -- Check for Murder weapons
-    local function hasMurderWeapon(container)
-        if not container then return false end
-        for _, item in ipairs(container:GetChildren()) do
-            if item:IsA("Tool") and 
-               (item.Name == "Knife" or 
-                string.find(string.lower(item.Name), "knife") or
-                string.find(string.lower(item.Name), "blade")) then
-                return true
-            end
-        end
-        return false
-    end
-    
-    -- Check for Sheriff weapons
-    local function hasSheriffWeapon(container)
-        if not container then return false end
-        for _, item in ipairs(container:GetChildren()) do
-            if item:IsA("Tool") and 
-               (item.Name == "Gun" or 
-                item.Name == "Revolver" or
-                string.find(string.lower(item.Name), "gun") or
-                string.find(string.lower(item.Name), "revolver")) then
-                return true
-            end
-        end
-        return false
-    end
-    
-    -- Check Murder role
-    if hasMurderWeapon(backpack) or hasMurderWeapon(character) then
-        currentMurder = LocalPlayer
-        return "Murder"
-    end
-    
-    -- Check Sheriff role
-    if hasSheriffWeapon(backpack) or hasSheriffWeapon(character) then
-        currentSheriff = LocalPlayer
-        return "Sheriff"
-    end
-    
-    return "Innocent"
-end
-
--- Reset roles when round ends/starts
-local function resetRoles()
-    table.clear(lastValidRoles)
-    confirmedMurderer = nil
-    currentSheriff = nil
-    currentMurder = nil
-    localPlayerRole = "Innocent"
-    roundInProgress = false
-    
-    -- Reset semua pemain ke Innocent
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            lastValidRoles[player] = "Innocent"
-            if espCache[player] and espCache[player].Frame then
-                espCache[player].Frame.BackgroundColor3 = roleColors.Innocent
-                if espCache[player].Frame.TextLabel then
-                    espCache[player].Frame.TextLabel.Text = player.Name:sub(1, 8) .. (#player.Name > 8 and ".." or "") .. "\nInnocent"
-                end
-            end
-        end
-    end
-    
-    -- Clear ESP cache
-    for _, esp in pairs(espCache) do
-        if esp and esp.Parent then
-            esp:Destroy()
-        end
-    end
-    table.clear(espCache)
-    
-    -- Clear gun drop cache
-    for _, esp in pairs(gunDropCache) do
-        if esp and esp.Parent then
-            esp:Destroy()
-        end
-    end
-    table.clear(gunDropCache)
-end
-
--- Improved Role Detection
-local function getPlayerRole(player)
-    if player == LocalPlayer then
-        return localPlayerRole
-    end
-    
-    if not player or not player.Character or not player.Character:FindFirstChild("Humanoid") then
-        return lastValidRoles[player] or "Innocent"
-    end
-    
-    local backpack = player:FindFirstChild("Backpack")
-    local character = player.Character
-    
-    -- Check for Murder weapons
-    local function hasMurderWeapon(container)
-        if not container then return false end
-        for _, item in ipairs(container:GetChildren()) do
-            if item:IsA("Tool") and 
-               (item.Name == "Knife" or 
-                string.find(string.lower(item.Name), "knife") or
-                string.find(string.lower(item.Name), "blade")) then
-                return true
-            end
-        end
-        return false
-    end
-    
-    -- Check for Sheriff weapons
-    local function hasSheriffWeapon(container)
-        if not container then return false end
-        for _, item in ipairs(container:GetChildren()) do
-            if item:IsA("Tool") and 
-               (item.Name == "Gun" or 
-                item.Name == "Revolver" or
-                string.find(string.lower(item.Name), "gun") or
-                string.find(string.lower(item.Name), "revolver")) then
-                return true
-            end
-        end
-        return false
-    end
-    
-    -- Murder detection
-    if hasMurderWeapon(backpack) or hasMurderWeapon(character) then
-        lastValidRoles[player] = "Murder"
-        confirmedMurderer = player
-        return "Murder"
-    end
-    
-    -- Sheriff detection
-    if (hasSheriffWeapon(backpack) or hasSheriffWeapon(character)) and roundInProgress then
-        if not currentSheriff or currentSheriff == player then
-            currentSheriff = player
-            lastValidRoles[player] = "Sheriff"
-            return "Sheriff"
-        end
-    end
-    
-    return lastValidRoles[player] or "Innocent"
-end
-
--- Optimized GunDrop ESP
-local function createGunDropESP(gunDrop)
-    if not gunDrop or not gunDrop.Parent then return end
-    if gunDropCache[gunDrop] then
-        return gunDropCache[gunDrop]
-    end
-    
-    local esp = Instance.new("BillboardGui")
-    esp.Name = "GunDropESP"
-    esp.Size = UDim2.new(0, 80, 0, 30)
-    esp.AlwaysOnTop = true
-    esp.StudsOffset = Vector3.new(0, 1, 0)
-    esp.MaxDistance = MAX_DISTANCE
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 0.3
-    frame.BackgroundColor3 = roleColors.GunDrop
-    frame.BorderSizePixel = 0
-    frame.Parent = esp
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.new(0, 0, 0)
-    nameLabel.TextSize = 11
-    nameLabel.Text = "🔫 GUN"
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.Parent = frame
-    
-    local distanceLabel = Instance.new("TextLabel")
-    distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    distanceLabel.Position = UDim2.new(0, 0, 0.5, 0)
-    distanceLabel.BackgroundTransparency = 1
-    distanceLabel.TextColor3 = Color3.new(0, 0, 0)
-    distanceLabel.TextSize = 10
-    distanceLabel.Font = Enum.Font.GothamBold
-    distanceLabel.Parent = frame
-    
-    -- Improved teleport function
-    local function teleportToGun()
-        local character = Players.LocalPlayer.Character
-        if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-        
-        local humanoid = character:FindFirstChild("Humanoid")
-        if not humanoid or humanoid.Health <= 0 then return end
-        
-        local originalCFrame = character.HumanoidRootPart.CFrame
-        local startTime = tick()
-        
-        -- Teleport to gun
-        character.HumanoidRootPart.CFrame = CFrame.new(gunDrop.Position + Vector3.new(0, 3, 0))
-        
-        -- Wait briefly
-        task.wait(0.15)
-        
-        -- Return if we haven't been there too long
-        if tick() - startTime < 0.3 then
-            character.HumanoidRootPart.CFrame = originalCFrame
-        end
-    end
-    
-    -- Distance updater
-    local updateConnection
-    updateConnection = RunService.Heartbeat:Connect(function()
-        if not esp or not esp.Parent or not gunDrop or not gunDrop.Parent then
-            if updateConnection then
-                updateConnection:Disconnect()
-            end
-            if esp and esp.Parent then
-                esp:Destroy()
-            end
-            gunDropCache[gunDrop] = nil
-            return
-        end
-        
-        local character = Players.LocalPlayer.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            local distance = (character.HumanoidRootPart.Position - gunDrop.Position).Magnitude
-            distanceLabel.Text = string.format("%.0fm", distance/3.571)
-        end
-    end)
-    
-    local tpButton = Instance.new("TextButton")
-    tpButton.Size = UDim2.new(1, 0, 1, 0)
-    tpButton.BackgroundTransparency = 1
-    tpButton.Text = ""
-    tpButton.Parent = frame
-    
-    local debounce = false
-    tpButton.MouseButton1Click:Connect(function()
-        if debounce then return end
-        debounce = true
-        teleportToGun()
-        task.wait(1)
-        debounce = false
-    end)
-    
-    gunDropCache[gunDrop] = esp
-    return esp
-end
-
--- Optimized Mobile Button
 local function createMobileButton()
-    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if not playerGui then return end
-    
-    local existingGui = playerGui:FindFirstChild("AimbotGUI")
-    if existingGui then
-        existingGui:Destroy()
-    end
-
     local gui = Instance.new("ScreenGui")
     gui.Name = "AimbotGUI"
     gui.ResetOnSpawn = false
     
-    local success, err = pcall(function()
-        syn = syn or {}
-        if syn and syn.protect_gui then
-            syn.protect_gui(gui)
-        end
-        gui.Parent = playerGui
-    end)
-    
-    if not success then
-        gui.Parent = playerGui
-    end
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 60, 0, 60)
-    frame.Position = UDim2.new(0.85, 0, 0.6, 0)
-    frame.BackgroundTransparency = 1
-    frame.Parent = gui
-    
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 1, 0)
+    button.Size = UDim2.new(0, 80, 0, 80)
+    button.Position = UDim2.new(0.85, 0, 0.6, 0)  
     button.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
     button.BackgroundTransparency = 0.5
-    button.Text = "Aim\nOFF"
+    button.Text = "Aimbot\nOFF"
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 12
+    button.TextSize = 14
     button.Font = Enum.Font.GothamBold
     button.BorderSizePixel = 2
-    button.Parent = frame
+    button.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    button.Parent = gui
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = button
-    
     local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(0, 100, 0, 20)
-    statusLabel.Position = UDim2.new(0.85, -20, 0.7, 0)
+    statusLabel.Size = UDim2.new(0, 150, 0, 30)
+    statusLabel.Position = UDim2.new(0.85, -35, 0.7, 0)
     statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "Waiting..."
+    statusLabel.Text = "No Murderer Found"
     statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    statusLabel.TextSize = 12
+    statusLabel.TextSize = 14
     statusLabel.Font = Enum.Font.GothamBold
     statusLabel.Parent = gui
-    
-    button.MouseButton1Click:Connect(function()
+    button.TouchTap:Connect(function()
         AIMBOT_ENABLED = not AIMBOT_ENABLED
-        button.Text = AIMBOT_ENABLED and "Aim\nON" or "Aim\nOFF"
+        button.Text = AIMBOT_ENABLED and "Aimbot\nON" or "Aimbot\nOFF"
         button.BackgroundColor3 = AIMBOT_ENABLED and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
     end)
     
+    gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
     return statusLabel
 end
 
--- Search for gun drops
-local function searchGunDrop(parent)
-    if not parent then return end
-    for _, v in ipairs(parent:GetChildren()) do
-        if v.Name == "GunDrop" and not gunDropCache[v] then
-            local esp = createGunDropESP(v)
-            if esp then
-                esp.Parent = v
-            end
+local function createESP(player)
+    local esp = Instance.new("BillboardGui")
+    esp.Name = "ESP"
+    esp.Size = UDim2.new(4, 0, 5.5, 0)
+    esp.AlwaysOnTop = true
+    esp.StudsOffset = Vector3.new(0, 2, 0)
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 0.5
+    frame.BorderSizePixel = 0
+    frame.Parent = esp
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, 0, 0.25, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+    nameLabel.TextScaled = true
+    nameLabel.Parent = esp
+
+    local roleLabel = Instance.new("TextLabel")
+    roleLabel.Size = UDim2.new(1, 0, 0.25, 0)
+    roleLabel.Position = UDim2.new(0, 0, 0.25, 0)
+    roleLabel.BackgroundTransparency = 1
+    roleLabel.TextColor3 = Color3.new(1, 1, 1)
+    roleLabel.TextScaled = true
+    roleLabel.Parent = esp
+
+    return esp, frame, nameLabel, roleLabel
 end
 
--- Main update loop
-local function mainUpdate()
-    if not LocalPlayer or not LocalPlayer.Character then return end
-    
-    local currentTick = tick()
-    if currentTick - lastUpdate >= UPDATE_INTERVAL then
-        lastUpdate = currentTick
-        localPlayerRole = checkLocalPlayerRole()
-        
-        -- Update Player ESP
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and 
-               player.Character and 
-               player.Character:FindFirstChild("Head") then
-                
-                local role = getPlayerRole(player)
-                local esp = espCache[player]
-                
-                if not esp or not esp.Parent then
-                    esp = createPlayerESP(player)
-                    if esp then
-                        esp.Parent = player.Character.Head
-                    end
+local function detectRole(player)
+    local character = player.Character
+    if character then
+        local tool = character:FindFirstChildOfClass("Tool")
+        if tool then
+            if tool.Name == "Gun" then
+                return "Sheriff"
+            elseif tool.Name == "Knife" then
+                if confirmedMurderer ~= player then
+                    confirmedMurderer = player
                 end
-                
-                if esp and esp:FindFirstChild("Frame") then
-                    local frame = esp.Frame
-                    frame.BackgroundColor3 = roleColors[role]
-                    if frame:FindFirstChild("TextLabel") then
-                        local displayName = player.Name:sub(1, 8) .. (#player.Name > 8 and ".." or "")
-                        frame.TextLabel.Text = displayName .. "\n" .. role
-                        frame.TextLabel.TextColor3 = (role == "Innocent") and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
+                return "Murder"
+            elseif tool.Name == "AAAAA" then
+                return "Innocent"
+            end
+        end
+    end
+    
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
+            if item.Name == "Gun" then
+                return "Sheriff"
+            elseif item.Name == "Knife" then
+                if confirmedMurderer ~= player then
+                    confirmedMurderer = player
+                end
+                return "Murder"
+            elseif item.Name == "AAAAA" then
+                return "Innocent"
+            end
+        end
+    end
+    
+    return "Unknown"
+end
+
+local function getMurdererTarget()
+    -- Jika sudah ada murderer yang dikonfirmasi
+    if confirmedMurderer and confirmedMurderer.Character then
+        local character = confirmedMurderer.Character
+        local humanoid = character:FindFirstChild("Humanoid")
+        local head = character:FindFirstChild(TARGET_PART)
+        
+        if humanoid and humanoid.Health > 0 and head then
+            return confirmedMurderer
+        end
+    end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            if detectRole(player) == "Murder" then
+                confirmedMurderer = player
+                return player
+            end
+        end
+    end
+    
+    return nil
+end
+
+local function aimAtTarget(target, statusLabel)
+    if not target then 
+        statusLabel.Text = "No Murderer Found"
+        return 
+    end
+    
+    local character = target.Character
+    if not character then return end
+    
+    local head = character:FindFirstChild(TARGET_PART)
+    if not head then return end
+    
+    statusLabel.Text = "Targeting: " .. target.Name
+    
+    local targetPos = head.Position
+    local direction = (targetPos - Camera.CFrame.Position).Unit
+    
+    local targetCFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction)
+    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
+end
+
+local function updateESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local character = player.Character
+            if character then
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    local esp = humanoidRootPart:FindFirstChild("ESP")
+                    if not esp then
+                        local newEsp, frame, nameLabel, roleLabel = createESP(player)
+                        newEsp.Parent = humanoidRootPart
+                    end
+                    
+                    local currentEsp = humanoidRootPart:FindFirstChild("ESP")
+                    if currentEsp then
+                        local currentRole = detectRole(player)
+                        
+                        if currentRole ~= "Unknown" then
+                            lastValidRoles[player.UserId] = currentRole
+                        end
+                        
+                        local displayRole = currentRole
+                        if currentRole == "Unknown" and lastValidRoles[player.UserId] then
+                            displayRole = lastValidRoles[player.UserId]
+                        end
+                        
+                        local frame = currentEsp:FindFirstChild("Frame")
+                        local nameLabel = currentEsp:FindFirstChild("TextLabel")
+                        local roleLabel = currentEsp:FindFirstChildOfClass("TextLabel")
+                        
+                        if frame and nameLabel and roleLabel then
+                            frame.BackgroundColor3 = roleColors[displayRole] or Color3.new(0.5, 0.5, 0.5)
+                            nameLabel.Text = player.Name
+                            roleLabel.Text = displayRole
+                        end
                     end
                 end
             end
-        end
-        
-        -- Update GunDrop ESP
-        searchGunDrop(workspace)
-        if workspace:FindFirstChild("Drops") then
-            searchGunDrop(workspace.Drops)
-        end
-        if workspace:FindFirstChild("Items") then
-            searchGunDrop(workspace.Items)
         end
     end
 end
 
--- Initialize mobile button
 local statusLabel = createMobileButton()
 
--- Connect main update loop with error handling
-RunService.Heartbeat:Connect(function()
-    local success, err = pcall(mainUpdate)
-    if not success then
-        warn("Error in main update loop:", err)
-    end
-end)
-
--- Event handlers
-workspace.DescendantAdded:Connect(function(descendant)
-    if descendant.Name == "GunDrop" then
-        task.wait(0.1)
-        local esp = createGunDropESP(descendant)
-        if esp then
-            esp.Parent = descendant
-        end
-    end
-end)
-
-workspace.DescendantRemoving:Connect(function(descendant)
-    if descendant.Name == "GunDrop" then
-        local esp = gunDropCache[descendant]
-        if esp then
-            esp:Destroy()
-            gunDropCache[descendant] = nil
-        end
+RunService.RenderStepped:Connect(function()
+    updateESP()
+    
+    if AIMBOT_ENABLED then
+        local target = getMurdererTarget()
+        aimAtTarget(target, statusLabel)
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    local esp = espCache[player]
-    if esp then
-        esp:Destroy()
-        espCache[player] = nil
-    end
-    
-    -- Reset Sheriff jika player yang leave adalah Sheriff
-    if currentSheriff == player then
-        currentSheriff = nil
-    end
-    
-    lastValidRoles[player] = nil
+    lastValidRoles[player.UserId] = nil
     if confirmedMurderer == player then
         confirmedMurderer = nil
-        if statusLabel then
-            statusLabel.Text = "Waiting..."
-        end
     end
 end)
 
--- Round detection and reset
-workspace.ChildAdded:Connect(function(child)
-    if child.Name == "Lobby" or child.Name == "Intermission" then
-        resetRoles()
-        roundInProgress = false
-        if statusLabel then
-            statusLabel.Text = "Waiting..."
-        end
-    elseif child.Name == "Game" then
-        roundInProgress = true
-        -- Reset Sheriff tracking untuk round baru
-        currentSheriff = nil
-    end
-end)
-
--- Aimbot update loop
-RunService.RenderStepped:Connect(function()
-    if AIMBOT_ENABLED and confirmedMurderer then
-        local character = confirmedMurderer.Character
-        if character and character:FindFirstChild(TARGET_PART) then
-            local target = character[TARGET_PART]
-            local targetPos = target.Position
-            
-            -- Check if target is valid
-            if targetPos then
-                local camera = workspace.CurrentCamera
-                if camera then
-                    local targetCFrame = CFrame.new(camera.CFrame.Position, targetPos)
-                    camera.CFrame = camera.CFrame:Lerp(targetCFrame, SMOOTHNESS)
-                    
-                    if statusLabel then
-                        statusLabel.Text = "Target: " .. confirmedMurderer.Name:sub(1, 8)
-                    end
-                end
-            end
-        else
-            if statusLabel then
-                statusLabel.Text = "No Target"
-            end
-        end
-    end
-end)
-
--- Extra Event Handlers for Role Reset
-local function checkPlayerDeath(player)
-    if player == currentSheriff then
-        -- When Sheriff dies, reset their role and enable gun drop tracking
-        currentSheriff = nil
-        lastValidRoles[player] = "Innocent"
-        
-        -- Update ESP
-        if espCache[player] and espCache[player].Frame then
-            espCache[player].Frame.BackgroundColor3 = roleColors.Innocent
-            if espCache[player].Frame.TextLabel then
-                espCache[player].Frame.TextLabel.Text = player.Name:sub(1, 8) .. (#player.Name > 8 and ".." or "") .. "\nInnocent"
-            end
-        end
-    end
-end
-
--- Monitor player deaths
 Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(character)
-        character:WaitForChild("Humanoid").Died:Connect(function()
-            checkPlayerDeath(player)
-        end)
+    player.CharacterAdded:Connect(function()
+        lastValidRoles[player.UserId] = nil
+        if confirmedMurderer == player then
+            confirmedMurderer = nil
+        end
     end)
 end)
-
--- Check existing players
-for _, player in ipairs(Players:GetPlayers()) do
-    if player.Character then
-        local humanoid = player.Character:WaitForChild("Humanoid")
-        humanoid.Died:Connect(function()
-            checkPlayerDeath(player)
-        end)
-    end
-    
-    player.CharacterAdded:Connect(function(character)
-        local humanoid = character:WaitForChild("Humanoid")
-        humanoid.Died:Connect(function()
-            checkPlayerDeath(player)
-        end)
-    end)
-end
-
--- Cleanup function
-local function cleanup()
-    resetRoles()
-    
-    -- Disconnect all connections
-    for _, connection in pairs(getconnections(RunService.Heartbeat)) do
-        connection:Disconnect()
-    end
-    for _, connection in pairs(getconnections(RunService.RenderStepped)) do
-        connection:Disconnect()
-    end
-    for _, connection in pairs(getconnections(workspace.DescendantAdded)) do
-        connection:Disconnect()
-    end
-    for _, connection in pairs(getconnections(workspace.DescendantRemoving)) do
-        connection:Disconnect()
-    end
-    
-    -- Remove GUI
-    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if playerGui then
-        local gui = playerGui:FindFirstChild("AimbotGUI")
-        if gui then
-            gui:Destroy()
-        end
-    end
-    
-    -- Clear all caches
-    table.clear(lastValidRoles)
-    table.clear(espCache)
-    table.clear(gunDropCache)
-    confirmedMurderer = nil
-    currentSheriff = nil
-    roundInProgress = false
-end
-
--- Handle script initialization errors
-local success, err = pcall(function()
-    -- Initial setup
-    resetRoles()
-    
-    -- Create initial ESP for existing players
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            task.spawn(function()
-                local esp = createPlayerESP(player)
-                if esp and player.Character then
-       local humanoid = player.Character:WaitForChild("Humanoid")
-        humanoid.Died:Connect(function()
-            checkPlayerDeath(player)
-        end)
-    end
-    
-    player.CharacterAdded:Connect(function(character)
-        local humanoid = character:WaitForChild("Humanoid")
-        humanoid.Died:Connect(function()
-            checkPlayerDeath(player)
-        end)
-    end)
-end
-
--- Cleanup function
-local function cleanup()
-    resetRoles()
-    
-    -- Disconnect all connections
-    for _, connection in pairs(getconnections(RunService.Heartbeat)) do
-        connection:Disconnect()
-    end
-    for _, connection in pairs(getconnections(RunService.RenderStepped)) do
-        connection:Disconnect()
-    end
-    for _, connection in pairs(getconnections(workspace.DescendantAdded)) do
-        connection:Disconnect()
-    end
-    for _, connection in pairs(getconnections(workspace.DescendantRemoving)) do
-        connection:Disconnect()
-    end
-    
-    -- Remove GUI
-    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if playerGui then
-        local gui = playerGui:FindFirstChild("AimbotGUI")
-        if gui then
-            gui:Destroy()
-        end
-    end
-    
-    -- Clear all caches
-    table.clear(lastValidRoles)
-    table.clear(espCache)
-    table.clear(gunDropCache)
-    confirmedMurderer = nil
-    currentSheriff = nil
-    roundInProgress = false
-end
-
--- Handle script initialization errors
-local success, err = pcall(function()
-    -- Initial setup
-    resetRoles()
-    
-    -- Create initial ESP for existing players
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            task.spawn(function()
-                local esp = createPlayerESP(player)
-                if esp and player.Character then
-                    esp.Parent = player.Character.Head
-                end
-            end)
-        end
-    end
-    
-    -- Initial gun drop search
-    searchGunDrop(workspace)
-    if workspace:FindFirstChild("Drops") then
-        searchGunDrop(workspace.Drops)
-    end
-    if workspace:FindFirstChild("Items") then
-        searchGunDrop(workspace.Items)
-    end
-end)
-
-if not success then
-    warn("Error during script initialization:", err)
-    cleanup()
-end
-
--- Add cleanup handler
-if game:GetService("CoreGui") then
-    game:GetService("CoreGui").DescendantRemoving:Connect(function(instance)
-        if instance.Name == "AimbotGUI" then
-            cleanup()
-        end
-    end)
-end
