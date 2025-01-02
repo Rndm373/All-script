@@ -268,11 +268,12 @@ end
 local function autoClaim()
     while autoClaimActive do
         for i = 1, 50 do
-            if not autoClaimActive then break end
-local args = {
-[1] = "normal",
-[2] = i
-} game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("ClaimPlaytimeReward"):InvokeServer(unpack(args))
+    local args = {
+        [1] = "normal",
+        [2] = i
+    }
+    
+    game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("ClaimGingerbreadPass"):InvokeServer(unpack(args))
             task.wait()
         end
         task.wait()
