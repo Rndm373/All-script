@@ -77,7 +77,7 @@ local lastSelectedEgg, lastSelectedPurchaseType = nil, nil
 local function createInputField(placeholder, layoutOrder)
     local inputBox = Instance.new("TextBox")
     inputBox.Size = UDim2.new(0.95, 0, 0, 25)
-    inputBox.Text = "Use Remote Spy for value!"
+    inputBox.Text = "Use Remote Spy for Rebirth value!"
     inputBox.PlaceholderText = placeholder
     inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -267,12 +267,12 @@ end
 
 local function autoClaim()
     while autoClaimActive do
-        for i = 1, 12 do
+        for i = 1, 50 do
             if not autoClaimActive then break end
             game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("ClaimPlaytimeReward"):InvokeServer(i)
-            task.wait(1)
+            task.wait()
         end
-        task.wait(5)
+        task.wait()
     end
 end
 
