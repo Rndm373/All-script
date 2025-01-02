@@ -219,22 +219,27 @@ local function createPurchaseTypeMenu()
 end
 
 local function teleportToObjects()
-    local storageFolder = workspace.Scripts.CollectGingerbread.Storage
-    local player = game.Players.LocalPlayer
-    local storageItems = storageFolder:GetChildren()
-    
-    if #storageItems == 0 then
-        teleportButton.Text = "Teleport to Objects (Inactive)"
-        teleportButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        return
-    end
-    
-    for _, storageItem in pairs(storageItems) do
-        if storageItem.PrimaryPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character:SetPrimaryPartCFrame(storageItem.PrimaryPart.CFrame)
-            task.wait()
+    while teleportActive do
+        local storageFolder = workspace.Scripts.CollectGingerbread.Storage
+        local player = game.Players.LocalPlayer
+        local storageItems = storageFolder:GetChildren()
+        
+        if #storageItems == 0 then
+           task.wait(1)
+            continue
         end
-    end
+        
+        for _, storageItem in pairs(storageItems) do
+            if not teleportActive then break end
+            
+            if storageItem.PrimaryPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character:SetPrimaryPartCFrame(storageItem.PrimaryPart.CFrame)
+                task.wait()
+            end
+        end
+        
+        task.wait(0)
+end
 end
 
 local function autoClick()
