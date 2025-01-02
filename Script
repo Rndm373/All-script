@@ -179,11 +179,7 @@ local function createPurchaseTypeMenu()
     local purchaseTypes = {
         {name = "Single", req = ""},
         {name = "Triple", req = "(Req Able to Triple)"},
-        {name = "Octuple", req = "If you have 8x/4x hatch
-If its doesn't work
-Please tell me
-the name inside
-RemoteSpy."}
+        {name = "Octuple", req = "(Req 8x hatch)"}
     }
 
     for i, purchaseType in ipairs(purchaseTypes) do
@@ -309,7 +305,7 @@ local instantExecuteButton = createButton("Remote Spy", 12)
 
 teleportButton.MouseButton1Click:Connect(function()
     teleportActive = not teleportActive
-    toggleButton(teleportButton, teleportActive, "Teleport to Gifts (Active)", "Teleport to Gifts (Inactive)")
+    toggleButton(teleportButton, teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
     if teleportActive then
         spawn(function()
             while teleportActive do
