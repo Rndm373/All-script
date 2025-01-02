@@ -2,9 +2,8 @@ local player = game.Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Create main frame with adjusted size
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 300) -- Reduced height from 480 to 300
+mainFrame.Size = UDim2.new(0, 200, 0, 300)
 mainFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.Parent = screenGui
@@ -12,7 +11,24 @@ mainFrame.Visible = true
 mainFrame.Active = true
 mainFrame.Draggable = true
 
--- Menu Title
+local eggFrame = Instance.new("Frame")
+eggFrame.Size = UDim2.new(0, 200, 0, 300)
+eggFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
+eggFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+eggFrame.Parent = screenGui
+eggFrame.Visible = false
+eggFrame.Active = true
+eggFrame.Draggable = true
+
+local purchaseTypeFrame = Instance.new("Frame")
+purchaseTypeFrame.Size = UDim2.new(0, 200, 0, 300)
+purchaseTypeFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
+purchaseTypeFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+purchaseTypeFrame.Parent = screenGui
+purchaseTypeFrame.Visible = false
+purchaseTypeFrame.Active = true
+purchaseTypeFrame.Draggable = true
+
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -21,7 +37,6 @@ titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.Parent = mainFrame
 
--- Create scrolling frame with improved scrolling properties
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, -10, 1, -40)
 scrollingFrame.Position = UDim2.new(0, 5, 0, 35)
@@ -34,10 +49,7 @@ scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 scrollingFrame.ScrollingEnabled = true
 scrollingFrame.ElasticBehavior = Enum.ElasticBehavior.Always
 scrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-scrollingFrame.HorizontalScrollBarInset = Enum.ScrollBarInset.None
-scrollingFrame.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
 
--- Create minimized button with adjusted size
 local minimizedButton = Instance.new("TextButton")
 minimizedButton.Size = UDim2.new(0, 200, 0, 30)
 minimizedButton.Position = UDim2.new(0.05, 0, 0.05, 0)
@@ -49,103 +61,29 @@ minimizedButton.Visible = false
 minimizedButton.Active = true
 minimizedButton.Draggable = true
 
--- Create UIListLayout with optimized spacing
-local listLayout = Instance.new("UIListLayout")
-listLayout.Parent = scrollingFrame
-listLayout.Padding = UDim.new(0, 4) -- Reduced padding from 5 to 4
-listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- Function to create button with optimized size
-local function createButton(text, layoutOrder)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0.95, 0, 0, 30) -- Adjusted size and reduced height from 35 to 30
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    button.LayoutOrder = layoutOrder
-    button.Parent = scrollingFrame
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = button
-    
-    return button
-end
-
--- Function to create input field with optimized size
-local function createInputField(placeholder, layoutOrder)
-    local inputBox = Instance.new("TextBox")
-    inputBox.Size = UDim2.new(0.95, 0, 0, 25) -- Adjusted size and reduced height from 30 to 25
-    inputBox.Text = "1"
-    inputBox.PlaceholderText = placeholder
-    inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    inputBox.LayoutOrder = layoutOrder
-    inputBox.Parent = scrollingFrame
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = inputBox
-    
-    return inputBox
-end
-
--- Create minimized button
-local minimizedButton = Instance.new("TextButton")
-minimizedButton.Size = UDim2.new(0, 200, 0, 30)
-minimizedButton.Position = UDim2.new(0.05, 0, 0.05, 0)
-minimizedButton.Text = "Show Menu"
-minimizedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-minimizedButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-minimizedButton.Parent = screenGui
-minimizedButton.Visible = false
-minimizedButton.Active = true
-minimizedButton.Draggable = true
-
--- Create UIListLayout for automatic button positioning
 local listLayout = Instance.new("UIListLayout")
 listLayout.Parent = scrollingFrame
 listLayout.Padding = UDim.new(0, 5)
 listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Toggle states
 local clickActive, buyActive, rebirthActive, teleportActive = false, false, false, false
 local autoEggsActive, autoCraftActive, autoClaimActive = false, false, false
 local autoSpinActive, autoGingerBuyActive = false, false
 local currentRebirthValue = 1
+local selectedEgg, selectedPurchaseType = nil, nil
+local lastSelectedEgg, lastSelectedPurchaseType = nil, nil
 
--- Function to create button
-local function createButton(text, layoutOrder)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0.9, 0, 0, 35)
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    button.LayoutOrder = layoutOrder
-    button.Parent = scrollingFrame
-    
-    -- Add corner radius
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = button
-    
-    return button
-end
-
--- Function to create input field
 local function createInputField(placeholder, layoutOrder)
     local inputBox = Instance.new("TextBox")
-    inputBox.Size = UDim2.new(0.9, 0, 0, 30)
-    inputBox.Text = "1"
+    inputBox.Size = UDim2.new(0.95, 0, 0, 25)
+    inputBox.Text = "Use Remote Spy for value!"
     inputBox.PlaceholderText = placeholder
     inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     inputBox.LayoutOrder = layoutOrder
     inputBox.Parent = scrollingFrame
     
-    -- Add corner radius
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = inputBox
@@ -153,26 +91,133 @@ local function createInputField(placeholder, layoutOrder)
     return inputBox
 end
 
--- Create buttons with layout orders
-local teleportButton = createButton("Teleport to Objects (Inactive)", 1)
-local clickButton = createButton("Auto Click", 2)
-local autoBuyButton = createButton("Auto Buy rebirth", 3)
-local rebirthInput = createInputField("Use Remote spy for value, 4)
-local rebirthButton = createButton("Auto Rebirth", 5)
-local autoEggsButton = createButton("Auto Open Eggs", 6)
-local autoCraftButton = createButton("Auto Craft Pet", 7)
-local autoClaimButton = createButton("Auto Claim", 8)
-local autoSpinButton = createButton("Auto Spin GingerBread", 9)
-local autoGingerBuyButton = createButton("Auto Buy ginger shop", 10)
-local hideButton = createButton("Hide Menu", 11)
+local function createButton(text, layoutOrder, parent)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0.95, 0, 0, 30)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.LayoutOrder = layoutOrder
+    button.Parent = parent or scrollingFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = button
+    
+    return button
+end
 
--- Toggle button function
+local function createTextLabel(text, parent)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.95, 0, 0, 20)
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.BackgroundTransparency = 1
+    label.TextSize = 12
+    label.Parent = parent
+    return label
+end
+
 local function toggleButton(button, isActive, activeText, inactiveText)
     button.Text = isActive and activeText or inactiveText
     button.BackgroundColor3 = isActive and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(50, 50, 50)
 end
 
--- Auto features functions
+local function createEggSelectionMenu()
+    local eggTitle = Instance.new("TextLabel")
+    eggTitle.Size = UDim2.new(1, 0, 0, 30)
+    eggTitle.Position = UDim2.new(0, 0, 0, 0)
+    eggTitle.Text = "Select Egg Type"
+    eggTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    eggTitle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    eggTitle.Parent = eggFrame
+
+    local eggScrollFrame = Instance.new("ScrollingFrame")
+    eggScrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    eggScrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    eggScrollFrame.BackgroundTransparency = 1
+    eggScrollFrame.ScrollBarThickness = 6
+    eggScrollFrame.Parent = eggFrame
+
+    local eggListLayout = Instance.new("UIListLayout")
+    eggListLayout.Parent = eggScrollFrame
+    eggListLayout.Padding = UDim.new(0, 5)
+    eggListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    local eggs = {"Snowglobe", "Reindeer", "2025"}
+    for i, eggType in ipairs(eggs) do
+        local eggButton = createButton(eggType, i, eggScrollFrame)
+        eggButton.MouseButton1Click:Connect(function()
+            selectedEgg = eggType
+            eggFrame.Visible = false
+            purchaseTypeFrame.Visible = true
+        end)
+    end
+end
+
+local function createPurchaseTypeMenu()
+    local purchaseTitle = Instance.new("TextLabel")
+    purchaseTitle.Size = UDim2.new(1, 0, 0, 30)
+    purchaseTitle.Position = UDim2.new(0, 0, 0, 0)
+    purchaseTitle.Text = "Select Purchase Type"
+    purchaseTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    purchaseTitle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    purchaseTitle.Parent = purchaseTypeFrame
+
+    local purchaseScrollFrame = Instance.new("ScrollingFrame")
+    purchaseScrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    purchaseScrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    purchaseScrollFrame.BackgroundTransparency = 1
+    purchaseScrollFrame.ScrollBarThickness = 6
+    purchaseScrollFrame.Parent = purchaseTypeFrame
+
+    local purchaseListLayout = Instance.new("UIListLayout")
+    purchaseListLayout.Parent = purchaseScrollFrame
+    purchaseListLayout.Padding = UDim.new(0, 5)
+    purchaseListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    local purchaseTypes = {
+        {name = "Single", req = ""},
+        {name = "Triple", req = "(Req Able to Triple)"},
+        {name = "Octuple", req = "(TellMeIfDoesntWork,UseRspyTo!)"}
+    }
+
+    for i, purchaseType in ipairs(purchaseTypes) do
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(0.95, 0, 0, 50)
+        container.BackgroundTransparency = 1
+        container.Parent = purchaseScrollFrame
+
+        local purchaseButton = createButton(purchaseType.name, i, container)
+        purchaseButton.Size = UDim2.new(1, 0, 0, 30)
+        
+        if purchaseType.req ~= "" then
+            local reqLabel = createTextLabel(purchaseType.req, container)
+            reqLabel.Position = UDim2.new(0, 0, 0, 32)
+        end
+
+        purchaseButton.MouseButton1Click:Connect(function()
+            selectedPurchaseType = purchaseType.name
+            lastSelectedEgg = selectedEgg
+            lastSelectedPurchaseType = selectedPurchaseType
+            purchaseTypeFrame.Visible = false
+            mainFrame.Visible = false
+            minimizedButton.Visible = true
+            autoEggsActive = true
+            spawn(function()
+                while autoEggsActive do
+                    local args = {
+                        [1] = selectedEgg,
+                        [2] = selectedPurchaseType
+                    }
+                    game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Unbox"):InvokeServer(unpack(args))
+                    task.wait()
+                end
+            end)
+        end)
+    end
+end
+
 local function teleportToObjects()
     local storageFolder = workspace.Scripts.CollectGingerbread.Storage
     local player = game.Players.LocalPlayer
@@ -213,13 +258,6 @@ local function autoRebirth()
     end
 end
 
-local function autoOpenEggs()
-    while autoEggsActive do
-        game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Unbox"):InvokeServer("Reindeer", "Triple")
-        task.wait()
-    end
-end
-
 local function autoCraftAll()
     while autoCraftActive do
         game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("Request"):InvokeServer("CraftAll", {})
@@ -252,7 +290,19 @@ local function autoGingerBuy()
     end
 end
 
--- Button click handlers
+local teleportButton = createButton("Teleport to Gifts", 1)
+local clickButton = createButton("Auto Click", 2)
+local autoBuyButton = createButton("Auto Buy rebirth", 3)
+local rebirthInput = createInputField("Use Remote spy for Rebirth value", 4)
+local rebirthButton = createButton("Auto Rebirth", 5)
+local autoEggsButton = createButton("Auto Open Eggs" .. (autoEggsActive and " (Active)" or ""), 6)
+local autoCraftButton = createButton("Auto Craft Pet", 7)
+local autoClaimButton = createButton("Auto Claim Pass", 8)
+local autoSpinButton = createButton("Auto Spin GingerBread", 9)
+local autoGingerBuyButton = createButton("Auto Buy ginger shop", 10)
+local hideButton = createButton("Hide Menu", 11)
+local instantExecuteButton = createButton("Remote Spy", 12)
+
 teleportButton.MouseButton1Click:Connect(function()
     teleportActive = not teleportActive
     toggleButton(teleportButton, teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
@@ -288,9 +338,8 @@ rebirthButton.MouseButton1Click:Connect(function()
 end)
 
 autoEggsButton.MouseButton1Click:Connect(function()
-    autoEggsActive = not autoEggsActive
-    toggleButton(autoEggsButton, autoEggsActive, "Auto Open Eggs (Active)", "Auto Open Eggs (Inactive)")
-    if autoEggsActive then spawn(autoOpenEggs) end
+    mainFrame.Visible = false
+    eggFrame.Visible = true
 end)
 
 autoCraftButton.MouseButton1Click:Connect(function()
@@ -317,22 +366,22 @@ autoGingerBuyButton.MouseButton1Click:Connect(function()
     if autoGingerBuyActive then spawn(autoGingerBuy) end
 end)
 
--- Hide/Show functionality
+instantExecuteButton.MouseButton1Click:Connect(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/SimpleSpyV3/main.lua"))()
+    end)
+
 hideButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     minimizedButton.Visible = true
-    -- Transfer position when hiding
     minimizedButton.Position = mainFrame.Position
 end)
 
 minimizedButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = true
     minimizedButton.Visible = false
-    -- Transfer position when showing
     mainFrame.Position = minimizedButton.Position
 end)
 
--- Add corner radius to frames
 local function addCornerRadius(instance)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
@@ -342,3 +391,30 @@ end
 addCornerRadius(mainFrame)
 addCornerRadius(minimizedButton)
 addCornerRadius(titleLabel)
+addCornerRadius(eggFrame)
+addCornerRadius(purchaseTypeFrame)
+
+createEggSelectionMenu()
+createPurchaseTypeMenu()
+
+local function createExitButton(parent)
+    local exitButton = Instance.new("TextButton")
+    exitButton.Size = UDim2.new(0, 20, 0, 20)
+    exitButton.Position = UDim2.new(1, -25, 0, 5)
+    exitButton.Text = "X"
+    exitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    exitButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    exitButton.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = exitButton
+    
+    exitButton.MouseButton1Click:Connect(function()
+        parent.Visible = false
+        mainFrame.Visible = true
+    end)
+end
+
+createExitButton(eggFrame)
+createExitButton(purchaseTypeFrame)
