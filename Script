@@ -179,7 +179,12 @@ local function createPurchaseTypeMenu()
     local purchaseTypes = {
         {name = "Single", req = ""},
         {name = "Triple", req = "(Req Able to Triple)"},
-        {name = "Octuple", req = "(TellMeIfDoesntWork,UseRspyTo!)"}
+        {name = "Octuple", req = "(If you have 8x/4x hatch
+If its doesn't work
+Please tell me
+the name inside
+RemoteSpy.
+)"}
     }
 
     for i, purchaseType in ipairs(purchaseTypes) do
