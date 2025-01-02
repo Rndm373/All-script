@@ -162,7 +162,7 @@ local function createESP(player)
     end
 end
 
--- Update ESP
+-- esp
 local function updateESP()
     local myCharacter = Players.LocalPlayer.Character
     if not myCharacter or not myCharacter:FindFirstChild("HumanoidRootPart") then return end
