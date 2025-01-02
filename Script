@@ -305,7 +305,7 @@ local instantExecuteButton = createButton("Remote Spy", 12)
 
 teleportButton.MouseButton1Click:Connect(function()
     teleportActive = not teleportActive
-    toggleButton(teleportButton, teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
+    toggleButton(teleportButton, teleportActive, "Teleport to Gifts (Active)", "Teleport to Gifts (Inactive)")
     if teleportActive then
         spawn(function()
             while teleportActive do
