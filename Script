@@ -29,6 +29,15 @@ purchaseTypeFrame.Visible = false
 purchaseTypeFrame.Active = true
 purchaseTypeFrame.Draggable = true
 
+local fireworkFrame = Instance.new("Frame")
+fireworkFrame.Size = UDim2.new(0, 200, 0, 300)
+fireworkFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
+fireworkFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+fireworkFrame.Parent = screenGui
+fireworkFrame.Visible = false
+fireworkFrame.Active = true
+fireworkFrame.Draggable = true
+
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -70,9 +79,13 @@ listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 local clickActive, buyActive, rebirthActive, teleportActive = false, false, false, false
 local autoEggsActive, autoCraftActive, autoClaimActive = false, false, false
 local autoSpinActive, autoGingerBuyActive = false, false
+local autoFireActive = false
+local autoUpgradeFireActive = false
 local currentRebirthValue = 1
 local selectedEgg, selectedPurchaseType = nil, nil
 local lastSelectedEgg, lastSelectedPurchaseType = nil, nil
+local selectedFireworkType = nil
+local lastSelectedFireworkType = nil
 
 local function createInputField(placeholder, layoutOrder)
     local inputBox = Instance.new("TextBox")
@@ -218,6 +231,50 @@ local function createPurchaseTypeMenu()
     end
 end
 
+local function createFireworkTypeMenu()
+    local fireworkTitle = Instance.new("TextLabel")
+    fireworkTitle.Size = UDim2.new(1, 0, 0, 30)
+    fireworkTitle.Position = UDim2.new(0, 0, 0, 0)
+    fireworkTitle.Text = "Select Firework Type"
+    fireworkTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    fireworkTitle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    fireworkTitle.Parent = fireworkFrame
+
+    local fireworkScrollFrame = Instance.new("ScrollingFrame")
+    fireworkScrollFrame.Size = UDim2.new(1, -10, 1, -40)
+    fireworkScrollFrame.Position = UDim2.new(0, 5, 0, 35)
+    fireworkScrollFrame.BackgroundTransparency = 1
+    fireworkScrollFrame.ScrollBarThickness = 6
+    fireworkScrollFrame.Parent = fireworkFrame
+
+    local fireworkListLayout = Instance.new("UIListLayout")
+    fireworkListLayout.Parent = fireworkScrollFrame
+    fireworkListLayout.Padding = UDim.new(0, 5)
+    fireworkListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    local fireworkTypes = {"Basic", "Golden", "Toxic", "Galaxy"}
+    for i, fireType in ipairs(fireworkTypes) do
+        local fireButton = createButton(fireType, i, fireworkScrollFrame)
+        fireButton.MouseButton1Click:Connect(function()
+            selectedFireworkType = fireType
+            lastSelectedFireworkType = fireType
+            fireworkFrame.Visible = false
+            mainFrame.Visible = false
+            minimizedButton.Visible = true
+            autoFireActive = true
+            spawn(function()
+                while autoFireActive do
+                    local args = {
+                        [1] = fireType
+                    }
+                    game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("LaunchFirework"):InvokeServer(unpack(args))
+                    task.wait()
+                end
+            end)
+        end)
+    end
+end
+
 local function teleportToObjects()
     while teleportActive do
         local storageFolder = workspace.Scripts.CollectGingerbread.Storage
@@ -239,7 +296,7 @@ local function teleportToObjects()
         end
         
         task.wait(0)
-end
+    end
 end
 
 local function autoClick()
@@ -273,12 +330,11 @@ end
 local function autoClaim()
     while autoClaimActive do
         for i = 1, 50 do
-    local args = {
-        [1] = "normal",
-        [2] = i
-    }
-    
-    game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("ClaimGingerbreadPass"):InvokeServer(unpack(args))
+            local args = {
+                [1] = "normal",
+                [2] = i
+            }
+            game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("ClaimGingerbreadPass"):InvokeServer(unpack(args))
             task.wait()
         end
         task.wait()
@@ -299,6 +355,13 @@ local function autoGingerBuy()
     end
 end
 
+local function autoUpgradeFire()
+    while autoUpgradeFireActive do
+        game:GetService("ReplicatedStorage"):WaitForChild("Functions"):WaitForChild("BuyFireworkMachineTier"):InvokeServer()
+        task.wait()
+    end
+end
+
 local teleportButton = createButton("Teleport to Gifts", 1)
 local clickButton = createButton("Auto Click", 2)
 local autoBuyButton = createButton("Auto Buy rebirth", 3)
@@ -309,12 +372,14 @@ local autoCraftButton = createButton("Auto Craft Pet", 7)
 local autoClaimButton = createButton("Auto Claim Pass", 8)
 local autoSpinButton = createButton("Auto Spin GingerBread", 9)
 local autoGingerBuyButton = createButton("Auto Buy ginger shop", 10)
-local hideButton = createButton("Hide Menu", 11)
-local instantExecuteButton = createButton("Remote Spy", 12)
+local autoFireButton = createButton("Auto Launch Fire Work", 11)
+local autoUpgradeFireButton = createButton("Auto Upgrade Firework Machine", 12)
+local hideButton = createButton("Hide Menu", 13)
+local instantExecuteButton = createButton("Remote Spy", 14)
 
 teleportButton.MouseButton1Click:Connect(function()
     teleportActive = not teleportActive
-    toggleButton(teleportButton, teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
+    toggleButton(teleportButton, teleportActive, "Teleport to Gifts (Active)", "Teleport to Gifts (Inactive)")
     if teleportActive then
         spawn(function()
             while teleportActive do
@@ -333,7 +398,7 @@ end)
 
 autoBuyButton.MouseButton1Click:Connect(function()
     buyActive = not buyActive
-    toggleButton(autoBuyButton, buyActive, "Auto Buy (Active)", "Auto Buy (Inactive)")
+    toggleButton(autoBuyButton, buyActive, "Auto Buy Rebirth(Active)", "Auto Buy Rebirth (Inactive)")
     if buyActive then spawn(autoBuy) end
 end)
 
@@ -347,8 +412,13 @@ rebirthButton.MouseButton1Click:Connect(function()
 end)
 
 autoEggsButton.MouseButton1Click:Connect(function()
-    mainFrame.Visible = false
-    eggFrame.Visible = true
+    if autoEggsActive then
+        autoEggsActive = false
+        toggleButton(autoEggsButton, false, "Auto Open Eggs", "Auto Open Eggs")
+    else
+        mainFrame.Visible = false
+        eggFrame.Visible = true
+    end
 end)
 
 autoCraftButton.MouseButton1Click:Connect(function()
@@ -375,9 +445,25 @@ autoGingerBuyButton.MouseButton1Click:Connect(function()
     if autoGingerBuyActive then spawn(autoGingerBuy) end
 end)
 
+autoFireButton.MouseButton1Click:Connect(function()
+    if autoFireActive then
+        autoFireActive = false
+        toggleButton(autoFireButton, false, "Auto Fire Work", "Auto Fire Work")
+    else
+        mainFrame.Visible = false
+        fireworkFrame.Visible = true
+    end
+end)
+
+autoUpgradeFireButton.MouseButton1Click:Connect(function()
+    autoUpgradeFireActive = not autoUpgradeFireActive
+    toggleButton(autoUpgradeFireButton, autoUpgradeFireActive, "Auto Upgrade Firework machine (Active)", "Auto Upgrade Firework machine (Inactive)")
+    if autoUpgradeFireActive then spawn(autoUpgradeFire) end
+end)
+
 instantExecuteButton.MouseButton1Click:Connect(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/SimpleSpyV3/main.lua"))()
-    end)
+end)
 
 hideButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
@@ -402,9 +488,11 @@ addCornerRadius(minimizedButton)
 addCornerRadius(titleLabel)
 addCornerRadius(eggFrame)
 addCornerRadius(purchaseTypeFrame)
+addCornerRadius(fireworkFrame)
 
 createEggSelectionMenu()
 createPurchaseTypeMenu()
+createFireworkTypeMenu()
 
 local function createExitButton(parent)
     local exitButton = Instance.new("TextButton")
@@ -427,3 +515,4 @@ end
 
 createExitButton(eggFrame)
 createExitButton(purchaseTypeFrame)
+createExitButton(fireworkFrame)
