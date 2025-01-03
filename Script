@@ -315,7 +315,7 @@ end
 
 local function autoRebirth()
     while rebirthActive do
-        game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Rebirth"):FireServer(currentRebirthValue)
+    game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Rebirth"):FireServer(currentRebirthValue)
         task.wait()
     end
 end
@@ -372,14 +372,15 @@ local autoCraftButton = createButton("Auto Craft Pet", 7)
 local autoClaimButton = createButton("Auto Claim Pass", 8)
 local autoSpinButton = createButton("Auto Spin GingerBread", 9)
 local autoGingerBuyButton = createButton("Auto Buy ginger shop", 10)
-local autoFireButton = createButton("Auto Launch Fire Work", 11)
-local autoUpgradeFireButton = createButton("Auto Upgrade Firework Machine", 12)
-local hideButton = createButton("Hide Menu", 13)
-local instantExecuteButton = createButton("Remote Spy", 14)
+local autoFireButton = createButton("Auto Fire Work", 11)
+local autoUpgradeFireButton = createButton("Auto Upgrade Fire Machine", 12)
+local instantFireworkButton = createButton("Open Firework machine", 13) 
+local hideButton = createButton("Hide Menu", 14)
+local instantExecuteButton = createButton("Remote Spy", 15)
 
 teleportButton.MouseButton1Click:Connect(function()
     teleportActive = not teleportActive
-    toggleButton(teleportButton, teleportActive, "Teleport to Gifts (Active)", "Teleport to Gifts (Inactive)")
+    toggleButton(teleportButton, teleportActive, "Teleport to Objects (Active)", "Teleport to Objects (Inactive)")
     if teleportActive then
         spawn(function()
             while teleportActive do
@@ -398,7 +399,7 @@ end)
 
 autoBuyButton.MouseButton1Click:Connect(function()
     buyActive = not buyActive
-    toggleButton(autoBuyButton, buyActive, "Auto Buy Rebirth(Active)", "Auto Buy Rebirth (Inactive)")
+    toggleButton(autoBuyButton, buyActive, "Auto Buy (Active)", "Auto Buy (Inactive)")
     if buyActive then spawn(autoBuy) end
 end)
 
@@ -457,8 +458,17 @@ end)
 
 autoUpgradeFireButton.MouseButton1Click:Connect(function()
     autoUpgradeFireActive = not autoUpgradeFireActive
-    toggleButton(autoUpgradeFireButton, autoUpgradeFireActive, "Auto Upgrade Firework machine (Active)", "Auto Upgrade Firework machine (Inactive)")
+    toggleButton(autoUpgradeFireButton, autoUpgradeFireActive, "Auto Upgrade Fire (Active)", "Auto Upgrade Fire (Inactive)")
     if autoUpgradeFireActive then spawn(autoUpgradeFire) end
+end)
+
+instantFireworkButton.MouseButton1Click:Connect(function()
+    local fireworkMachine = workspace.Scripts.Spawn.FireworkMachine
+    if fireworkMachine and fireworkMachine:FindFirstChild("Touch") then
+        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, fireworkMachine.Touch, 0)
+        task.wait()
+        firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, fireworkMachine.Touch, 1)
+    end
 end)
 
 instantExecuteButton.MouseButton1Click:Connect(function()
