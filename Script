@@ -234,7 +234,7 @@ local function teleportToObjects()
             
             if storageItem.PrimaryPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                 player.Character:SetPrimaryPartCFrame(storageItem.PrimaryPart.CFrame)
-                task.wait(0.8)
+                task.wait(0.2)
             end
         end
         
