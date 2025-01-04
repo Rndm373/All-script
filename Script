@@ -12,6 +12,8 @@ elseif gameId == 17321628486 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/No%20jump%20obby")
 elseif gameId == 6205205961 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/Head")
+elseif gameId == 14449073815 then
+    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/Findthekey")
 else
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "CustomNotification"
