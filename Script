@@ -3,7 +3,9 @@ local function loadScript(url)
         loadstring(game:HttpGet(url))()
     end)
 end
+
 local gameId = game.PlaceId
+
 if gameId == 205224386 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/hideandseek")
 elseif gameId == 8540346411 then
@@ -14,39 +16,52 @@ elseif gameId == 6205205961 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/Head")
 elseif gameId == 14449073815 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/findthekey")
+elseif gameId == 15799538583 then
+    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/findthekey")
+elseif gameId == 15799589613 then
+    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/findthekey")
+elseif gameId == 15799599573 then
+    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/findthekey")
+elseif gameId == 15799547595 then
+    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/findthekey")
 else
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CustomNotification"
-ScreenGui.Parent = game.CoreGui
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 50)
-Frame.Position = UDim2.new(1, -320, 1, -100)
-Frame.AnchorPoint = Vector2.new(1, 1)
-Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Frame.BackgroundTransparency = 0.2
-Frame.Parent = ScreenGui
-local TextLabel = Instance.new("TextLabel")
-TextLabel.Size = UDim2.new(1, -50, 1, 0)
-TextLabel.Position = UDim2.new(0, 50, 0, 0)
-TextLabel.Font = Enum.Font.SourceSansBold
-TextLabel.Text = "Game Not supported\nCheck supported game on the scriptblox!\ncannot access scriptblox? check out at rscripts.net"
-TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextLabel.TextSize = 16
-TextLabel.TextXAlignment = Enum.TextXAlignment.Left
-TextLabel.TextYAlignment = Enum.TextYAlignment.Center
-TextLabel.BackgroundTransparency = 1
-TextLabel.Parent = Frame
-local ImageLabel = Instance.new("ImageLabel")
-ImageLabel.Size = UDim2.new(0, 40, 0, 40)
-ImageLabel.Position = UDim2.new(0, 5, 0.5, -20)
-ImageLabel.Image = "rbxassetid://316605349"
-ImageLabel.BackgroundTransparency = 1
-ImageLabel.Parent = Frame
-Frame.Position = UDim2.new(1, 0, 1, -100)
-Frame:TweenPosition(UDim2.new(1, -320, 1, -100), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
-wait(6)
-Frame:TweenPosition(UDim2.new(1, 0, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
-wait(0.5)
-ScreenGui:Destroy()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "CustomNotification"
+    ScreenGui.Parent = game.CoreGui
+
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 300, 0, 50)
+    Frame.Position = UDim2.new(1, -320, 1, -100)
+    Frame.AnchorPoint = Vector2.new(1, 1)
+    Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Frame.BackgroundTransparency = 0.2
+    Frame.Parent = ScreenGui
+
+    local TextLabel = Instance.new("TextLabel")
+    TextLabel.Size = UDim2.new(1, -50, 1, 0)
+    TextLabel.Position = UDim2.new(0, 50, 0, 0)
+    TextLabel.Font = Enum.Font.SourceSansBold
+    TextLabel.Text = "Game Not supported\nCheck supported game on the scriptblox!\ncannot access scriptblox? check out at rscripts.net"
+    TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel.TextSize = 16
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TextLabel.TextYAlignment = Enum.TextYAlignment.Center
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Parent = Frame
+
+    local ImageLabel = Instance.new("ImageLabel")
+    ImageLabel.Size = UDim2.new(0, 40, 0, 40)
+    ImageLabel.Position = UDim2.new(0, 5, 0.5, -20)
+    ImageLabel.Image = "rbxassetid://316605349"
+    ImageLabel.BackgroundTransparency = 1
+    ImageLabel.Parent = Frame
+
+    Frame.Position = UDim2.new(1, 0, 1, -100)
+    Frame:TweenPosition(UDim2.new(1, -320, 1, -100), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
+    wait(6)
+    Frame:TweenPosition(UDim2.new(1, 0, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
+    wait(0.5)
+    ScreenGui:Destroy()
 end
-print("Supported games: Escape from running head, Find all keys (soon), Hide and seek extreme, Rebirth champion X, no jump obby") 
+
+print("Supported games: Escape from running head, Find the keys, Hide and seek extreme, Rebirth champion X, No jump obby, and more.")
