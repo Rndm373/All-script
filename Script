@@ -9,5 +9,5 @@ if gameId == 5874128725 then
 elseif gameId == 8540346411 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/RebirthChampionX")
 else
-    game:Kick("Unsupported game")
+    print("Unsupported game")
 end
