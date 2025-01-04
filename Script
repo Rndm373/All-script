@@ -4,8 +4,8 @@ local function loadScript(url)
     end)
 end
 local gameId = game.PlaceId
-if gameId == 5874128725 then
-    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/No%20Jump%20obby")
+if gameId == 205224386 then
+    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/hideandseek")
 elseif gameId == 8540346411 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/RebirthChampionX")
 elseif gameId == 17321628486 then
