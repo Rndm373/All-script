@@ -68,4 +68,7 @@ else
     ScreenGui:Destroy()
 end
 
-print("Supported games: Escape from running head, Find the keys, Hide and seek extreme, Rebirth champion X, No jump obby, and more.")
+game:GetService("StarterGui"):SetCore("SendNotification",{
+	Title = "Supported Game",
+	Text = "Escape from running head, Find the keys, Hide and seek extreme, Rebirth champion X, No jump obby, Muscle legend"
+})
