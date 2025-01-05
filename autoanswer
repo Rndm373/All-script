@@ -26,7 +26,7 @@ local answers = {
     "Hippopotomonstrosesquippedaliophobia", "Vitamin B12", "gaming chair", "Saxophone", "Wisdom Teeth",
     "Harley Quinn", "Frozen Water Bottle", "Hermit Crab", "Galapagos tortoise", "Mountain Everest",
     "Macadamia Nuts", "flower", "rock", "americancheese", "steak", "pig", "angry", "taylorswift", "phone", "spiderman", "kreekcraft", "refrigerator handle", "Electric Bass Guitar", "Rubber Duckie", "German", "colacola",
-    "Democratic Republic of the Congo", "Chrysanthemum", "Kitchen Knife", "december", "T-rex", "MCALISTER DELi",
+    "Democratic Republic of the Congo", "Chrysanthemum", "Kitchen Knife", "december", "T-rex", "MCALISTER DELi","strawberry", "chocolate icecream", 
 }
 
 local function sendAnswer(answer)
