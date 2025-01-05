@@ -85,5 +85,5 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
 })
 game:GetService("StarterGui"):SetCore("SendNotification",{
 	Title = "GitHub links",
-	Text = "",
+	Text = "https://github.com/Rndm373/All-script/blob/main/autoanswer",
 })
