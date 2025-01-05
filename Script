@@ -30,6 +30,8 @@ elseif gameId == 3623096087 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/musclelegend")
 elseif gameId == 4162410081 then
     loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/autoanswer")
+elseif gameId == 142823291 then
+    loadScript("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/Mm2")
 else
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "CustomNotification"
