@@ -33,7 +33,6 @@ local selectedDelay = 1
 local autoAnswering = false
 local autoAnswerLoop = nil
 
--- Membuat list delay
 local delayList = {}
 for i = 1, 22 do
     table.insert(delayList, tostring(i))
