@@ -70,5 +70,9 @@ end
 
 game:GetService("StarterGui"):SetCore("SendNotification",{
 	Title = "Supported Game",
-	Text = "Escape from running head, Find the keys, Hide and seek extreme, Rebirth champion X, No jump obby, Muscle legend"
+	Text = "Escape from running head, Find the keys, Hide and seek extreme, Rebirth champion X, No jump obby,"
+})
+game:GetService("StarterGui"):SetCore("SendNotification",{
+	Title = "Supported Game",
+	Text = "Muscle Legend, You can also request a script or a feature!",
 })
