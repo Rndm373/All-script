@@ -6,7 +6,7 @@ local MainTab = CoastingLibrary:CreateTab("Main")
 local MainSection = MainTab:CreateSection("Answer")
 
 local answers = {
-    "kitchenknife", "treadmill", "samsung", "leopard", "multiple", "rectangle", "americanfootball", "wednesday", "weddingdress", "knife", "Master bedroom", "Cable stripping machine", "Philip Sherman", "The Great Wall of China",
+    "kitchenknife", "Gigantosaurus", "Joyomavrus", "elsa", "pencil", "adventure", "phonecase", "sushi", "toyota", "spring", "treadmill", "samsung", "leopard", "multiple", "rectangle", "americanfootball", "wednesday", "weddingdress", "knife", "Master bedroom", "Cable stripping machine", "Philip Sherman", "The Great Wall of China",
     "Michael Jordan", "Girl With A Pearl Earring", "Invincibility", "Rectangular prism", "Steering wheel",
     "Daily dose of internet", "Taking out the trash", "scientific calculator", "Tamago kake gohan",
     "Amazon Prime Video", "inflatable party decorations", "Police Car", "precious gemstone", "sportswear",
@@ -26,8 +26,18 @@ local answers = {
     "Hippopotomonstrosesquippedaliophobia", "Vitamin B12", "gaming chair", "Saxophone", "Wisdom Teeth",
     "Harley Quinn", "Frozen Water Bottle", "Hermit Crab", "Galapagos tortoise", "Mountain Everest",
     "Macadamia Nuts", "flower", "rock", "americancheese", "steak", "pig", "angry", "taylorswift", "phone", "spiderman", "kreekcraft", "refrigerator handle", "Electric Bass Guitar", "Rubber Duckie", "German", "colacola",
-    "Democratic Republic of the Congo", "Chrysanthemum", "Kitchen Knife", "december", "T-rex", "MCALISTER DELi","strawberry", "chocolate icecream", 
+    "Democratic Republic of the Congo", "Chrysanthemum", "Kitchen Knife", "December", "T-rex", "MCALISTER DELi","strawberry", "chocolate", "icecream", "uranium", "turtle",
 }
+
+local selectedDelay = 1
+local autoAnswering = false
+local autoAnswerLoop = nil
+
+-- Membuat list delay
+local delayList = {}
+for i = 1, 22 do
+    table.insert(delayList, tostring(i))
+end
 
 local function sendAnswer(answer)
     local ReplicaSignal = game:GetService("ReplicatedStorage"):WaitForChild("ReplicaRemoteEvents"):WaitForChild("Replica_ReplicaSignal")
@@ -39,51 +49,98 @@ local function sendAnswer(answer)
     ReplicaSignal:FireServer(unpack(args))
     print("Sended:", answer)
 end
-
 local function sendAllAnswers()
     for _, answer in ipairs(answers) do
         sendAnswer(answer)
     end
 end
+local function getRandomDelay()
+    return math.random(3, 15)
+end
 
-local autoAnswering = false
-local autoAnswerLoop = nil
-
-local function startAutoAnswer()
+local function startAutoAnswer(useRandomDelay)
     autoAnswerLoop = coroutine.create(function()
         while autoAnswering do
-            for _, answer in ipairs(answers) do
-                if not autoAnswering then break end
-                sendAnswer(answer)
-                wait(0.5)
-            end
-            wait()
+            sendAllAnswers()           
+            local currentDelay = useRandomDelay and getRandomDelay() or selectedDelay
+            wait(currentDelay)
         end
     end)
     coroutine.resume(autoAnswerLoop)
 end
-
 MainSection:CreateButton("Answer Question", function()
     sendAllAnswers()
 end)
 
-MainSection:CreateToggle("Answer Question", nil, function(Value)
-    autoAnswering = Value
-    if Value then
-        startAutoAnswer()
+MainSection:CreateDropdown("Select Delay", delayList, 1, function(option)
+    selectedDelay = tonumber(option)
+end)
+
+MainSection:CreateToggle("Auto Answer (Fixed)", function(state)
+    autoAnswering = state
+    if state then
+        startAutoAnswer(false)
     else
         autoAnswering = false
     end
 end)
+
+MainSection:CreateToggle("Auto Answer (Random)", function(state)
+    autoAnswering = state
+    if state then
+        startAutoAnswer(true)
+    else
+        autoAnswering = false
+    end
+end)
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomNotification"
+ScreenGui.Parent = game.CoreGui
+
+-- frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 50)
+Frame.Position = UDim2.new(1, -320, 1, -100)
+Frame.AnchorPoint = Vector2.new(1, 1)
+Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Frame.BackgroundTransparency = 0.2
+Frame.Parent = ScreenGui
+
+-- notification
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Size = UDim2.new(1, -50, 1, 0)
+TextLabel.Position = UDim2.new(0, 50, 0, 0)
+TextLabel.Font = Enum.Font.SourceSansBold
+TextLabel.Text = "Thank you for using my script!\nif you don't mind give me a like on the website"
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.TextSize = 16
+TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+TextLabel.TextYAlignment = Enum.TextYAlignment.Center
+TextLabel.BackgroundTransparency = 1
+TextLabel.Parent = Frame
+
+-- image
+local ImageLabel = Instance.new("ImageLabel")
+ImageLabel.Size = UDim2.new(0, 40, 0, 40)
+ImageLabel.Position = UDim2.new(0, 5, 0.5, -20)
+ImageLabel.Image = "rbxassetid://316605349"
+ImageLabel.BackgroundTransparency = 1
+ImageLabel.Parent = Frame
+
+-- animation
+Frame.Position = UDim2.new(1, 0, 1, -100)
+Frame:TweenPosition(UDim2.new(1, -320, 1, -100), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
+
+wait(6)
+
+Frame:TweenPosition(UDim2.new(1, 0, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
+wait(0.5)
+ScreenGui:Destroy()
+
+-- notification
+
 game:GetService("StarterGui"):SetCore("SendNotification",{
-	Title = "Notice",
-	Text = "Auto Answer Loop doesn't work,just use the button!,"
-})
-game:GetService("StarterGui"):SetCore("SendNotification",{
-	Title = "Reminder",
-	Text = "You can took the code and add answer by yourself at github",
-})
-game:GetService("StarterGui"):SetCore("SendNotification",{
-	Title = "GitHub links",
-	Text = "https://github.com/Rndm373/All-script/blob/main/autoanswer",
+	Title = "Thank You For using my\nscript",
+	Text = "Updated: Fixed Automaticly Answer added delay for answer"
 })
