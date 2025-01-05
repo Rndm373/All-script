@@ -77,6 +77,6 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
 })
 game:GetService("StarterGui"):SetCore("SendNotification",{
 	Title = "Supported Game",
-	Text = "Muscle Legend, You can also request a script or a feature!",
+	Text = "Muscle Legend, Murder Mystery 2, Longest answer wins.",
 })
 end
