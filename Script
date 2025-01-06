@@ -76,7 +76,7 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
 	Text = "Escape from running head, Find the keys, Hide and seek extreme, Rebirth champion X, No jump obby,"
 })
 game:GetService("StarterGui"):SetCore("SendNotification",{
-	Title = "Supported Game",
+	Title = "Supported Game #2",
 	Text = "Muscle Legend, Murder Mystery 2, Longest answer wins,bloxfruit(coming soon)",
 })
 end
