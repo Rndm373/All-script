@@ -1,0 +1,150 @@
+local loadGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/GhostDuckyy/UI-Libraries/main/Coasting%20Ui%20Lib/source.lua"))()
+local CoastingLibrary = loadGui
+
+local MainTab = CoastingLibrary:CreateTab("Main")
+local GameSection = MainTab:CreateSection("Game Features")
+
+GameSection:CreateButton("Show Correct Glass", function()
+    for i = 1, 55 do
+        local segmentPath = workspace.segmentSystem.Segments:FindFirstChild("Segment" .. i)
+        if segmentPath then
+            local folder = segmentPath:FindFirstChild("Folder")
+            if folder then
+                local breakableFound = false
+                
+                for _, part in ipairs(folder:GetChildren()) do
+                    if part:IsA("Part") then
+                        local breakableValue = part:FindFirstChild("breakable")
+                        if breakableValue and breakableValue:IsA("BoolValue") then
+                            if breakableValue.Value then
+                                part.BrickColor = BrickColor.new("Really red")
+                            else
+                                part.BrickColor = BrickColor.new("Lime green")
+                            end
+                            breakableFound = true
+                        end
+                    end
+                end
+                
+                if not breakableFound then
+                    for _, part in ipairs(folder:GetChildren()) do
+                        if part:IsA("Part") then
+                            part.BrickColor = BrickColor.new("Lime green")
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+local function teleportToFinish()
+    local character = game.Players.LocalPlayer.Character
+    if character and character.HumanoidRootPart then
+        local chest = workspace.Finish:FindFirstChild("Chest")
+        if chest then
+            character:MoveTo(chest.Position)
+        end
+    end
+end
+GameSection:CreateButton("Finish the Game", function()
+    teleportToFinish()
+end)
+local autoFinishEnabled = false
+local autoFinishLoop = nil
+
+GameSection:CreateToggle("Auto Finish Game", function(state)
+    autoFinishEnabled = state
+    if state then
+        autoFinishLoop = coroutine.create(function()
+            while autoFinishEnabled do
+                teleportToFinish()
+                wait(3)
+            end
+        end)
+        coroutine.resume(autoFinishLoop)
+    else
+        autoFinishEnabled = false
+    end
+end)
+GameSection:CreateButton("Create Jump Button", function()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "CustomJumpButton"
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    local JumpButton = Instance.new("TextButton")
+    JumpButton.Name = "JumpButton"
+    JumpButton.Size = UDim2.new(0, 100, 0, 100)
+    JumpButton.Position = UDim2.new(0.85, 0, 0.6, 0)
+    JumpButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    JumpButton.BackgroundTransparency = 0.5
+    JumpButton.Text = "Jump"
+    JumpButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    JumpButton.TextSize = 24
+    JumpButton.Font = Enum.Font.SourceSansBold
+    JumpButton.Parent = ScreenGui
+
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(1, 0)
+    UICorner.Parent = JumpButton
+
+    local function onJumpButtonPressed()
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.Jump = true
+        end
+    end
+
+    JumpButton.MouseButton1Click:Connect(onJumpButtonPressed)
+    JumpButton.TouchTap:Connect(onJumpButtonPressed)
+end)
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomNotification"
+ScreenGui.Parent = game.CoreGui
+
+-- frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 50)
+Frame.Position = UDim2.new(1, -320, 1, -100)
+Frame.AnchorPoint = Vector2.new(1, 1)
+Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Frame.BackgroundTransparency = 0.2
+Frame.Parent = ScreenGui
+
+-- notification
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Size = UDim2.new(1, -50, 1, 0)
+TextLabel.Position = UDim2.new(0, 50, 0, 0)
+TextLabel.Font = Enum.Font.SourceSansBold
+TextLabel.Text = "Thank you for using my script!\nif you don't mind give me a like on the website"
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.TextSize = 16
+TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+TextLabel.TextYAlignment = Enum.TextYAlignment.Center
+TextLabel.BackgroundTransparency = 1
+TextLabel.Parent = Frame
+
+-- image
+local ImageLabel = Instance.new("ImageLabel")
+ImageLabel.Size = UDim2.new(0, 40, 0, 40)
+ImageLabel.Position = UDim2.new(0, 5, 0.5, -20)
+ImageLabel.Image = "rbxassetid://316605349"
+ImageLabel.BackgroundTransparency = 1
+ImageLabel.Parent = Frame
+
+-- animation
+Frame.Position = UDim2.new(1, 0, 1, -100)
+Frame:TweenPosition(UDim2.new(1, -320, 1, -100), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
+
+wait(6)
+
+Frame:TweenPosition(UDim2.new(1, 0, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
+wait(0.5)
+ScreenGui:Destroy()
+
+-- notification
+
+game:GetService("StarterGui"):SetCore("SendNotification",{
+	Title = "Thank You For using my\nscript",
+	Text = "Create jump button for create another jump button to fix delay."
+})
