@@ -6,7 +6,7 @@ local MainTab = CoastingLibrary:CreateTab("Main")
 local MainSection = MainTab:CreateSection("Answer")
 
 local answers = {
-    "kitchenknife", "Gigantosaurus", "Joyomavrus", "elsa", "pencil", "adventure", "phonecase", "sushi", "toyota", "spring", "treadmill", "samsung", "leopard", "multiple", "rectangle", "americanfootball", "wednesday", "weddingdress", "knife", "Master bedroom", "Cable stripping machine", "Philip Sherman", "The Great Wall of China",
+    "kitchenknife", "jupiter", "Gigantosaurus", "Joyomavrus", "elsa", "pencil", "adventure", "phonecase", "sushi", "toyota", "spring", "treadmill", "samsung", "leopard", "multiple", "rectangle", "americanfootball", "wednesday", "weddingdress", "knife", "Master bedroom", "Cable stripping machine", "Philip Sherman", "The Great Wall of China",
     "Michael Jordan", "Girl With A Pearl Earring", "Invincibility", "Rectangular prism", "Steering wheel",
     "Daily dose of internet", "Taking out the trash", "scientific calculator", "Tamago kake gohan",
     "Amazon Prime Video", "inflatable party decorations", "Police Car", "precious gemstone", "sportswear",
@@ -54,7 +54,7 @@ local function sendAllAnswers()
     end
 end
 local function getRandomDelay()
-    return math.random(3, 15)
+    return math.random(6, 15)
 end
 
 local function startAutoAnswer(useRandomDelay)
