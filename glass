@@ -66,6 +66,49 @@ GameSection:CreateToggle("Auto Finish Game", function(state)
         autoFinishEnabled = false
     end
 end)
+
+GameSection:CreateButton("Get Free Robux Crate", function()
+    local args = {
+        [1] = "processCrate",
+        [2] = 3
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("crateRemote"):FireServer(unpack(args))
+
+    local args = {
+        [1] = "processReward",
+        [2] = 3
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("crateRemote"):FireServer(unpack(args))
+end)
+
+local autoRobuxEnabled = false
+local autoRobuxLoop = nil
+
+GameSection:CreateToggle("Auto Free Robux Crate", function(state)
+    autoRobuxEnabled = state
+    if state then
+        autoRobuxLoop = coroutine.create(function()
+            while autoRobuxEnabled do
+                local args1 = {
+                    [1] = "processCrate",
+                    [2] = 3
+                }
+                game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("crateRemote"):FireServer(unpack(args1))
+
+                local args2 = {
+                    [1] = "processReward",
+                    [2] = 3
+                }
+                game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("crateRemote"):FireServer(unpack(args2))
+                wait(0.1)
+            end
+        end)
+        coroutine.resume(autoRobuxLoop)
+    else
+        autoRobuxEnabled = false
+    end
+end)
+
 GameSection:CreateButton("Create Jump Button", function()
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "CustomJumpButton"
