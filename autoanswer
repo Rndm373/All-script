@@ -141,5 +141,5 @@ ScreenGui:Destroy()
 
 game:GetService("StarterGui"):SetCore("SendNotification",{
 	Title = "Thank You For using my\nscript",
-	Text = "Updated: Fixed Automaticly Answer added delay for answer"
+	Text = "You can add answer by taking the script at github."
 })
