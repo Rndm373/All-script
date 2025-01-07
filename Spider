@@ -2,9 +2,9 @@ local loadGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/Ghost
 local CoastingLibrary = loadGui
 local function sendNotification(title, text, duration)
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = Hey,
-        Text = Thankyou For Using my script,
-        Duration = 3
+        Title = title,
+        Text = text,
+        Duration = duration or 3
     })
 end
 
