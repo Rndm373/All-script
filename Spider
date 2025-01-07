@@ -1,0 +1,364 @@
+local loadGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/GhostDuckyy/UI-Libraries/main/Coasting%20Ui%20Lib/source.lua"))()
+local CoastingLibrary = loadGui
+local function sendNotification(title, text, duration)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = duration or 3
+    })
+end
+
+local MainTab = CoastingLibrary:CreateTab("Items ESP")
+local ItemSection = MainTab:CreateSection("Item Features")
+local itemsList = {
+    "Blue Key",
+    "Green Key",
+    "Orange Key",
+    "Purple Key",
+    "Red Key",
+    "Yellow Key",
+    "Wrench",
+    "Crowbar",
+    "Bug Spray",
+    "C4",
+    "Ladder"
+}
+local selectedItem = nil
+ItemSection:CreateDropdown(
+    "Select Item",
+    itemsList,
+    1,
+    function(option)
+        selectedItem = option
+        local item = workspace.Items:FindFirstChild(selectedItem)
+        if not item then
+            sendNotification("Item Not Found", selectedItem .. " Someone already holding it!", 3)
+        end
+    end
+)
+
+local function teleportToItem(item)
+    local character = game.Players.LocalPlayer.Character
+    local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+    
+    if humanoidRootPart then
+        local targetPosition
+        if item:IsA("Model") and item:FindFirstChild("Handle") then
+            targetPosition = item.Handle.Position
+        elseif item:FindFirstChild("Hitbox") then
+            targetPosition = item.Hitbox.Position
+        else
+            targetPosition = item.Position
+        end
+        
+        humanoidRootPart.CFrame = CFrame.new(targetPosition + Vector3.new(0, 3, 0))
+    end
+end
+
+ItemSection:CreateButton(
+    "Teleport To Item",
+    function()
+        if selectedItem then
+            local item = workspace.Items:FindFirstChild(selectedItem)
+            if item then
+                teleportToItem(item)
+            else
+                sendNotification("Error", selectedItem .. " not found!", 3)
+            end
+        end
+    end
+)
+
+local function createESP(item)
+    if not item:FindFirstChild("ESP") then
+        local esp = Instance.new("BillboardGui")
+        esp.Name = "ESP"
+        esp.Size = UDim2.new(0, 200, 0, 50)
+        esp.AlwaysOnTop = true
+        esp.Parent = item
+        esp.Adornee = item
+
+        local name = Instance.new("TextLabel")
+        name.Text = item.Name
+        name.Size = UDim2.new(1, 0, 1, 0)
+        name.BackgroundTransparency = 1
+        name.TextColor3 = Color3.new(1, 1, 1)
+        name.TextStrokeTransparency = 0
+        name.TextStrokeColor3 = Color3.new(0, 0, 0)
+        name.Font = Enum.Font.SourceSansBold
+        name.TextSize = 14
+        name.Parent = esp
+
+        local distance = Instance.new("TextLabel")
+        distance.Name = "Distance"
+        distance.Size = UDim2.new(1, 0, 0.4, 0)
+        distance.Position = UDim2.new(0, 0, 1, 0)
+        distance.BackgroundTransparency = 1
+        distance.TextColor3 = Color3.new(1, 1, 1)
+        distance.TextStrokeTransparency = 0
+        distance.TextStrokeColor3 = Color3.new(0, 0, 0)
+        distance.Font = Enum.Font.SourceSansBold
+        distance.TextSize = 12
+        distance.Parent = esp
+    end
+end
+
+local function updateESPDistance(esp)
+    local distance = esp:FindFirstChild("Distance")
+    if distance then
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local playerPos = character.HumanoidRootPart.Position
+            local itemPos = esp.Adornee.Position
+            local studsDistance = (playerPos - itemPos).Magnitude
+            distance.Text = string.format("%.1f meters", studsDistance)
+        end
+    end
+end
+local espEnabled = false
+
+ItemSection:CreateToggle(
+    "ESP Items",
+    function(boolean)
+        espEnabled = boolean
+        if espEnabled then
+            local foundItems = false
+            for _, item in pairs(workspace.Items:GetChildren()) do
+                createESP(item)
+                foundItems = true
+            end
+            
+            if not foundItems then
+                sendNotification("Warning", "No items found", 3)
+            end
+        else
+            for _, item in pairs(workspace.Items:GetChildren()) do
+                local esp = item:FindFirstChild("ESP")
+                if esp then
+                    esp:Destroy()
+                end
+            end
+        end
+    end
+)
+game:GetService("RunService").RenderStepped:Connect(function()
+    if espEnabled then
+        for _, item in pairs(workspace.Items:GetChildren()) do
+            local esp = item:FindFirstChild("ESP")
+            if esp then
+                esp.Adornee = item
+                updateESPDistance(esp)
+            else
+                createESP(item)
+            end
+        end
+    end
+end)
+
+local PlayerSection = MainTab:CreateSection("Spider")
+local playerDropdown
+local function updatePlayerList()
+    local playerList = {}
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer then
+            table.insert(playerList, player.Name)
+        end
+    end
+    return playerList
+end
+local selectedPlayer = nil
+playerDropdown = PlayerSection:CreateDropdown(
+    "Select Player",
+    updatePlayerList(),
+    1,
+    function(option)
+        selectedPlayer = option
+    end
+)
+local function refreshPlayerList()
+    local newList = updatePlayerList()
+    if playerDropdown and playerDropdown.Update then
+        playerDropdown:Update(newList)
+    end
+end
+local function createPlayerESP(player)
+    local character = workspace:FindFirstChild(player)
+    if character and not character:FindFirstChild("PlayerESP") then
+        local esp = Instance.new("BillboardGui")
+        esp.Name = "PlayerESP"
+        esp.Size = UDim2.new(0, 200, 0, 50)
+        esp.AlwaysOnTop = true
+        esp.Parent = character
+        esp.Adornee = character
+
+        local name = Instance.new("TextLabel")
+        name.Text = player
+        name.Size = UDim2.new(1, 0, 1, 0)
+        name.BackgroundTransparency = 1
+        name.TextColor3 = Color3.new(1, 0, 0)
+        name.TextStrokeTransparency = 0
+        name.TextStrokeColor3 = Color3.new(0, 0, 0)
+        name.Font = Enum.Font.SourceSansBold
+        name.TextSize = 14
+        name.Parent = esp
+
+        local distance = Instance.new("TextLabel")
+        distance.Name = "Distance"
+        distance.Size = UDim2.new(1, 0, 0.4, 0)
+        distance.Position = UDim2.new(0, 0, 1, 0)
+        distance.BackgroundTransparency = 1
+        distance.TextColor3 = Color3.new(1, 1, 1)
+        distance.TextStrokeTransparency = 0
+        distance.TextStrokeColor3 = Color3.new(0, 0, 0)
+        distance.Font = Enum.Font.SourceSansBold
+        distance.TextSize = 12
+        distance.Parent = esp
+    end
+end
+local function updatePlayerESPDistance(esp)
+    local distance = esp:FindFirstChild("Distance")
+    if distance then
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local playerPos = character.HumanoidRootPart.Position
+            local targetPos = esp.Adornee:FindFirstChild("HumanoidRootPart") and esp.Adornee.HumanoidRootPart.Position
+            if targetPos then
+                local studsDistance = (playerPos - targetPos).Magnitude
+                distance.Text = string.format("%.1f studs", studsDistance)
+            end
+        end
+    end
+end
+
+local playerEspEnabled = false
+PlayerSection:CreateToggle(
+    "ESP Players",
+    function(enabled)
+        playerEspEnabled = enabled
+        if playerEspEnabled then
+            for _, player in ipairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer then
+                    createPlayerESP(player.Name)
+                end
+            end
+        else
+            for _, player in ipairs(game.Players:GetPlayers()) do
+                local character = workspace:FindFirstChild(player.Name)
+                if character then
+                    local esp = character:FindFirstChild("PlayerESP")
+                    if esp then
+                        esp:Destroy()
+                    end
+                end
+            end
+        end
+    end
+)
+
+PlayerSection:CreateButton(
+    "Teleport To Player",
+    function()
+        if selectedPlayer then
+            local targetPlayer = workspace:FindFirstChild(selectedPlayer)
+            if targetPlayer and targetPlayer:FindFirstChild("HumanoidRootPart") then
+                local character = game.Players.LocalPlayer.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    character.HumanoidRootPart.CFrame = targetPlayer.HumanoidRootPart.CFrame
+                end
+            else
+                warn("Selected player not found")
+            end
+        else
+            warn("Please select a player first!")
+        end
+    end
+)
+
+PlayerSection:CreateButton(
+    "Remove Ladder Trick",
+    function()
+        local shed = workspace.Map01_Cabin.Shed
+        if shed then
+            local spiderTruss = shed:FindFirstChild("SpiderTruss")
+            if spiderTruss then
+                spiderTruss:Destroy()
+                sendNotification("Success", "SpiderTruss has been removed!", 3)
+            else
+                sendNotification("Error", "SpiderTruss not found in Shed!", 3)
+            end
+        else
+            sendNotification("Error", "Shed not found!", 3)
+        end
+    end
+)
+
+game.Players.PlayerAdded:Connect(function(player)
+    refreshPlayerList()
+    if playerEspEnabled then
+        createPlayerESP(player.Name)
+    end
+end)
+
+game.Players.PlayerRemoving:Connect(function(player)
+    refreshPlayerList()
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if playerEspEnabled then
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer then
+                local character = workspace:FindFirstChild(player.Name)
+                if character then
+                    createPlayerESP(player.Name)
+                    local esp = character:FindFirstChild("PlayerESP")
+                    if esp then
+                        updatePlayerESPDistance(esp)
+                    end
+                end
+            end
+        end
+    end
+end)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomNotification"
+ScreenGui.Parent = game.CoreGui
+
+-- frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 50)
+Frame.Position = UDim2.new(1, -320, 1, -100)
+Frame.AnchorPoint = Vector2.new(1, 1)
+Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Frame.BackgroundTransparency = 0.2
+Frame.Parent = ScreenGui
+
+-- notification
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Size = UDim2.new(1, -50, 1, 0)
+TextLabel.Position = UDim2.new(0, 50, 0, 0)
+TextLabel.Font = Enum.Font.SourceSansBold
+TextLabel.Text = "Thank you for using my script!\nif you don't mind give me a like on the website"
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.TextSize = 16
+TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+TextLabel.TextYAlignment = Enum.TextYAlignment.Center
+TextLabel.BackgroundTransparency = 1
+TextLabel.Parent = Frame
+
+-- image
+local ImageLabel = Instance.new("ImageLabel")
+ImageLabel.Size = UDim2.new(0, 40, 0, 40)
+ImageLabel.Position = UDim2.new(0, 5, 0.5, -20)
+ImageLabel.Image = "rbxassetid://316605349"
+ImageLabel.BackgroundTransparency = 1
+ImageLabel.Parent = Frame
+
+-- animation
+Frame.Position = UDim2.new(1, 0, 1, -100)
+Frame:TweenPosition(UDim2.new(1, -320, 1, -100), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
+
+wait(6)
+
+Frame:TweenPosition(UDim2.new(1, 0, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
+wait(0.5)
+ScreenGui:Destroy()
