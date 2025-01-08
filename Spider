@@ -32,7 +32,7 @@ ItemSection:CreateDropdown(
         selectedItem = option
         local item = workspace.Items:FindFirstChild(selectedItem)
         if not item then
-            sendNotification("Item Not Found", selectedItem .. " Someone already holding it!", 3)
+            sendNotification("Item Not Found", selectedItem .. " Someone already Took it!", 3)
         end
     end
 )
@@ -362,3 +362,8 @@ wait(6)
 Frame:TweenPosition(UDim2.new(1, 0, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
 wait(0.5)
 ScreenGui:Destroy()
+
+game:GetService("StarterGui"):SetCore("SendNotification",{
+	Title = "Notice",
+	Text = "Update tomorrow!"
+})
