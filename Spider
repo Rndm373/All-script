@@ -282,12 +282,12 @@ PlayerSection:CreateButton(
             local spiderTruss = shed:FindFirstChild("SpiderTruss")
             if spiderTruss then
                 spiderTruss:Destroy()
-                sendNotification("Success", "SpiderTruss has been removed!", 3)
+                sendNotification("Success", "Ladder trick Has been removed!", 3)
             else
-                sendNotification("Error", "SpiderTruss not found in Shed!", 3)
+                sendNotification("Error", "Did you pressed this twice?.", 3)
             end
         else
-            sendNotification("Error", "Shed not found!", 3)
+            sendNotification("Error", "not found!", 3)
         end
     end
 )
