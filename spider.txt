@@ -1,0 +1,27 @@
+local HttpService = game:GetService("HttpService")
+
+-- Function to get the key from Pastebin
+local function getKeyFromPastebin()
+    local url = "https://pastebin.com/raw/148zgJ4D"
+    local response = HttpService:GetAsync(url)  -- Fetch the raw content from Pastebin
+    return response
+end
+
+-- Fetch the key and store it in getgenv
+local key = getKeyFromPastebin()
+getgenv().key = key
+
+-- Check if the key is valid
+if getgenv().key == "X5SpiderWin" then
+    -- Execute your script if the key is valid
+    print("Key is valid!")
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/Spider"))()
+else
+    -- If the key is invalid, do not execute the script
+    print("Invalid key!")
+end
+
+
