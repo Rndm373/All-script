@@ -1,19 +1,17 @@
--- Mengecek key dari getgenv()
-if getgenv().Key == "X5SpiderWin" then
-    print("Key is valid, executing script...")
-    
-    -- Memuat dan mengeksekusi skrip dari URL yang diberikan
-    local success, err = pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Rndm373/All-script/refs/heads/main/spider.txt"))()
-    end)
+-- LocalScript
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local keyCheckEvent = ReplicatedStorage:WaitForChild("KeyCheckEvent")
 
-    if not success then
-        -- Jika ada kesalahan dalam eksekusi, tampilkan pesan error
-        warn("Error loading the script: " .. err)
+-- Menunggu skrip dari server
+keyCheckEvent.OnClientEvent:Connect(function(scriptContent)
+    if scriptContent then
+        -- Menjalankan skrip yang diterima dari server
+        local func, err = loadstring(scriptContent)
+        if func then
+            func()  -- Eksekusi skrip yang diterima
+            print("Script executed successfully!")
+        else
+            print("Error executing script: " .. err)
+        end
     end
-else
-    print("Invalid key! Script will not execute.")
-end
-
-
-
+end)
