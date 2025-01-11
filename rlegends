@@ -96,6 +96,72 @@ EggSection:CreateButton("Rejoin", function()
     game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer) 
 end) 
 
+EggSection:CreateToggle("Auto Delete Super Exclusive", function(state)
+    local autoDeleteSettings = game:GetService("Players").LocalPlayer:FindFirstChild("Auto-Delete Settings")
+    if autoDeleteSettings then
+        local superExclusive = autoDeleteSettings:FindFirstChild("Super Exclusive")
+        if state then
+            if not superExclusive then
+                superExclusive = Instance.new("BoolValue")
+                superExclusive.Name = "Super Exclusive"
+                superExclusive.Value = true
+                superExclusive.Parent = autoDeleteSettings
+            else
+                superExclusive.Value = true
+            end
+        else
+            if superExclusive then
+                superExclusive:Destroy()
+            end
+        end
+    end
+end)
+
+local deletePetList = {}
+local function refreshDeletePetList()
+    deletePetList = {}
+    local seenPets = {}
+    for _, pet in ipairs(game:GetService("Players").LocalPlayer.Pets:GetChildren()) do
+        if not seenPets[pet.Name] then
+            seenPets[pet.Name] = true
+            table.insert(deletePetList, pet.Name)
+        end
+    end
+end
+
+refreshDeletePetList()
+local selectedPetToDelete = nil
+EggSection:CreateDropdown("Select Pet to Delete", deletePetList, 1, function(option)
+    selectedPetToDelete = option
+end)
+EggSection:CreateButton("Delete Pet", function()
+    if selectedPetToDelete then
+        local args = {
+            [1] = selectedPetToDelete,
+            [2] = false
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("EggHatchingRemote"):WaitForChild("DeletePet"):FireServer(unpack(args))
+        refreshDeletePetList()
+    end
+end)
+local autoDeletePetsEnabled = false
+EggSection:CreateToggle("Auto Delete Pets", function(state)
+    autoDeletePetsEnabled = state
+    while autoDeletePetsEnabled do
+        if selectedPetToDelete then
+            local args = {
+                [1] = selectedPetToDelete,
+                [2] = false
+            }
+            game:GetService("ReplicatedStorage"):WaitForChild("EggHatchingRemote"):WaitForChild("DeletePet"):FireServer(unpack(args))
+        end
+        task.wait(0.5)
+        if not autoDeletePetsEnabled then break end
+    end
+end)
+
+EggSection:CreateLabel("Note", "After deleting pets, please rejoin!")
+
 local DupeSection = DupeEquipTab:CreateSection("Duplicate Equip Pets") 
 DupeSection:CreateLabel("Note", "Equip 1 best pet to appear on menu") 
 local selectedPet = nil 
@@ -157,5 +223,5 @@ for _, upgrade in ipairs(upgradeTypes) do
 end
 game:GetService("StarterGui"):SetCore("SendNotification",{
 	Title = "Update!!",
-	Text = "Fixed dupe equip,for auto delete soon."
+	Text = "Fixed dupe equip,for auto delete has been released.."
 })
