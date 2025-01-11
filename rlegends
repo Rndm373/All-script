@@ -155,7 +155,7 @@ EggSection:CreateToggle("Auto Delete Pets", function(state)
             }
             game:GetService("ReplicatedStorage"):WaitForChild("EggHatchingRemote"):WaitForChild("DeletePet"):FireServer(unpack(args))
         end
-        task.wait(0.5)
+        task.wait(0)
         if not autoDeletePetsEnabled then break end
     end
 end)
