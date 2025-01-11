@@ -14,7 +14,6 @@ MainSection:CreateToggle("Auto Clicker", function(state)
 end)
 
 local rebirthList = { "x1", "x5", "x10", "x25", "x50", "x100", "x250", "x1k", "x2.5k", "x5k", "x10k", "x25k", "x50k", "x100k", "x250k", "x500k", "x1m", "x5m", "x10m", "x50m", "x100m", "x1b", "x10b", "x100b", "x1t", "x10t", "x99t", "x500t", "x1qa", "x2.5qa", "x10qa", "x50qa", "x500qa", "x5qi", "x50qi", "x100qi", "x500qi", "x1sx" } 
-
 local selectedRebirth = nil 
 MainSection:CreateDropdown("Auto Rebirth", rebirthList, 1, function(option) 
     selectedRebirth = option 
@@ -65,7 +64,6 @@ MainSection:CreateToggle("Auto Rebirth", function(state)
             elseif selectedRebirth == "x500qi" then rebirthValue = 500000000000000000000 
             elseif selectedRebirth == "x1sx" then rebirthValue = 1000000000000000000000 
             end
-
             local args = { [1] = rebirthValue }
             game:GetService("ReplicatedStorage"):WaitForChild("Rebirth"):FireServer(unpack(args))
         end 
@@ -105,9 +103,24 @@ local petList = {}
 
 local function refreshPetList() 
     petList = {} 
-    for _, pet in next, workspace._PlayerPets[game.Players.LocalPlayer.Name]:GetChildren() do 
-        table.insert(petList, pet.Name) 
-    end 
+    local playerPetsFolder = workspace:FindFirstChild("_PlayerPets") 
+    if playerPetsFolder then
+        local playerFolder = playerPetsFolder:FindFirstChild(game.Players.LocalPlayer.Name) 
+        if playerFolder then
+            for _, pet in pairs(playerFolder:GetChildren()) do 
+                if pet:IsA("Model") and pet:FindFirstChild("Name") then
+                    table.insert(petList, pet.Name or "Unknown Pet") 
+                elseif pet.Name then
+                    table.insert(petList, pet.Name)
+                else
+                    table.insert(petList, "Unnamed Pet")
+                end
+            end
+        end
+    end
+    if #petList == 0 then
+        table.insert(petList, "No Pets Found")
+    end
     DupeSection:CreateDropdown("Select Pet", petList, 1, function(option) 
         selectedPet = option 
     end) 
@@ -142,3 +155,7 @@ for _, upgrade in ipairs(upgradeTypes) do
         end 
     end) 
 end
+game:GetService("StarterGui"):SetCore("SendNotification",{
+	Title = "Update!!",
+	Text = "Fixed dupe equip,for auto delete soon."
+})
