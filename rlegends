@@ -1,90 +1,144 @@
-local loadGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/GhostDuckyy/UI-Libraries/main/Coasting%20Ui%20Lib/source.lua"))()
-local CoastingLibrary = loadGui
-local MainTab = CoastingLibrary:CreateTab("Main")
-local DupeEquipTab = CoastingLibrary:CreateTab("Dupe Equip Pets")
-local MainSection = MainTab:CreateSection("Main Features")
-local autoClickEnabled = false
-MainSection:CreateToggle("Auto Clicker", function(state)
-    autoClickEnabled = state
-    while autoClickEnabled do
-         game:GetService("ReplicatedStorage"):WaitForChild("TappingRemote"):WaitForChild("Tap"):FireServer()
-        task.wait(0.1) -- u can adjust this
-        if not autoClickEnabled then break end
-    end
+local loadGui = loadstring(game:HttpGet("https://raw.githubusercontent.com/GhostDuckyy/UI-Libraries/main/Coasting%20Ui%20Lib/source.lua"))() 
+local CoastingLibrary = loadGui 
+local MainTab = CoastingLibrary:CreateTab("Main") 
+local DupeEquipTab = CoastingLibrary:CreateTab("Dupe Equip Pets") 
+local MainSection = MainTab:CreateSection("Main Features") 
+local autoClickEnabled = false 
+MainSection:CreateToggle("Auto Clicker", function(state) 
+    autoClickEnabled = state 
+    while autoClickEnabled do 
+        game:GetService("ReplicatedStorage"):WaitForChild("TappingRemote"):WaitForChild("Tap"):FireServer() 
+        task.wait(0.1) 
+        if not autoClickEnabled then break end 
+    end 
 end)
-local rebirthList = {
-    "x1", "x5", "x10", "x25", "x50", "x100", "x250", "x1k", "x2.5k", "x5k", "x10k",
-    "x25k", "x50k", "x100k", "x250k", "x500k", "x1m", "x5m", "x10m", "x50m", "x100m",
-    "x1b", "x10b", "x100b", "x1t", "x10t", "x99t", "x500t", "x1qa", "x2.5qa", "x10qa",
-    "x50qa", "x500qa", "x5qi", "x50qi", "x100qi", "x500qi", "x1sx"
-}
-local selectedRebirth = nil
-MainSection:CreateDropdown("Auto Rebirth", rebirthList, 1, function(option)
-    selectedRebirth = option
-end)
-local EggSection = MainTab:CreateSection("Egg")
-local eggList = {}
-for _, egg in next, workspace.Eggs:GetChildren() do
-    table.insert(eggList, egg.Name)
-end
-local selectedEgg = nil
-EggSection:CreateDropdown("Select Egg", eggList, 1, function(option)
-    selectedEgg = option
-end)
-local autoOpenEggs = false
-EggSection:CreateToggle("Auto Open Eggs", function(state)
-    autoOpenEggs = state
-    while autoOpenEggs and selectedEgg do
-        local args = {workspace.Eggs:FindFirstChild(selectedEgg)}
-        game:GetService("ReplicatedStorage"):WaitForChild("EggHatchingRemote"):WaitForChild("HatchServer"):InvokeServer(unpack(args))
-        task.wait(0)
-        if not autoOpenEggs then break end
-    end
-end)
-EggSection:CreateLabel("Note", "Pets appear after rejoining")
-EggSection:CreateButton("Rejoin", function()
-    game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
-end)
-local DupeSection = DupeEquipTab:CreateSection("Duplicate Equip Pets")
-DupeSection:CreateLabel("Note", "Equip 1 best pet to appear on menu")
-local selectedPet = nil
-local petList = {}
-local function refreshPetList()
-    petList = {}
-    for _, pet in next, workspace._PlayerPets[game.Players.LocalPlayer.Name]:GetChildren() do
-        table.insert(petList, pet.Name)
-    end
-    DupeSection:CreateDropdown("Select Pet", petList, 1, function(option)
-        selectedPet = option
-    end)
-end
-refreshPetList()
-DupeSection:CreateButton("Refresh Pet List", function()
-    refreshPetList()
-end)
-local autoEquipPets = false
-DupeSection:CreateToggle("Auto Equip Selected Pets", function(state)
-    autoEquipPets = state
-    while autoEquipPets and selectedPet do
-        local args = {selectedPet}
-        game:GetService("ReplicatedStorage"):WaitForChild("EggHatchingRemote"):WaitForChild("EquipPet"):InvokeServer(unpack(args))
-        task.wait(0)
-        if not autoEquipPets then break end
-    end
-end)
-local upgradeTypes = {
-    "HatchSpeed", "More Gems", "Jump", "Inventory", "More Taps", "Luck", "Speed", "MaxPets"
-}
 
-for _, upgrade in ipairs(upgradeTypes) do
-    local autoUpgrade = false
-    MainSection:CreateToggle("Auto Upgrade " .. upgrade, function(bool)
-        autoUpgrade = bool
-        while autoUpgrade do
-            local args = {upgrade}
-            game:GetService("ReplicatedStorage"):WaitForChild("Upgrade"):InvokeServer(unpack(args))
-            task.wait(0.2)
-            if not autoUpgrade then break end
-        end
-    end)
+local rebirthList = { "x1", "x5", "x10", "x25", "x50", "x100", "x250", "x1k", "x2.5k", "x5k", "x10k", "x25k", "x50k", "x100k", "x250k", "x500k", "x1m", "x5m", "x10m", "x50m", "x100m", "x1b", "x10b", "x100b", "x1t", "x10t", "x99t", "x500t", "x1qa", "x2.5qa", "x10qa", "x50qa", "x500qa", "x5qi", "x50qi", "x100qi", "x500qi", "x1sx" } 
+
+local selectedRebirth = nil 
+MainSection:CreateDropdown("Auto Rebirth", rebirthList, 1, function(option) 
+    selectedRebirth = option 
+end)
+
+local autoRebirthEnabled = false 
+MainSection:CreateToggle("Auto Rebirth", function(state) 
+    autoRebirthEnabled = state 
+    while autoRebirthEnabled do 
+        if selectedRebirth then 
+            local rebirthValue = 0
+            if selectedRebirth == "x1" then rebirthValue = 1 
+            elseif selectedRebirth == "x5" then rebirthValue = 5 
+            elseif selectedRebirth == "x10" then rebirthValue = 10 
+            elseif selectedRebirth == "x25" then rebirthValue = 25 
+            elseif selectedRebirth == "x50" then rebirthValue = 50 
+            elseif selectedRebirth == "x100" then rebirthValue = 100 
+            elseif selectedRebirth == "x250" then rebirthValue = 250 
+            elseif selectedRebirth == "x1k" then rebirthValue = 1000 
+            elseif selectedRebirth == "x2.5k" then rebirthValue = 2500 
+            elseif selectedRebirth == "x5k" then rebirthValue = 5000 
+            elseif selectedRebirth == "x10k" then rebirthValue = 10000 
+            elseif selectedRebirth == "x25k" then rebirthValue = 25000 
+            elseif selectedRebirth == "x50k" then rebirthValue = 50000 
+            elseif selectedRebirth == "x100k" then rebirthValue = 100000 
+            elseif selectedRebirth == "x250k" then rebirthValue = 250000 
+            elseif selectedRebirth == "x500k" then rebirthValue = 500000 
+            elseif selectedRebirth == "x1m" then rebirthValue = 1000000 
+            elseif selectedRebirth == "x5m" then rebirthValue = 5000000 
+            elseif selectedRebirth == "x10m" then rebirthValue = 10000000 
+            elseif selectedRebirth == "x50m" then rebirthValue = 50000000 
+            elseif selectedRebirth == "x100m" then rebirthValue = 100000000 
+            elseif selectedRebirth == "x1b" then rebirthValue = 1000000000 
+            elseif selectedRebirth == "x10b" then rebirthValue = 10000000000 
+            elseif selectedRebirth == "x100b" then rebirthValue = 100000000000 
+            elseif selectedRebirth == "x1t" then rebirthValue = 1000000000000 
+            elseif selectedRebirth == "x10t" then rebirthValue = 10000000000000 
+            elseif selectedRebirth == "x99t" then rebirthValue = 99000000000000 
+            elseif selectedRebirth == "x500t" then rebirthValue = 500000000000000 
+            elseif selectedRebirth == "x1qa" then rebirthValue = 1000000000000000 
+            elseif selectedRebirth == "x2.5qa" then rebirthValue = 2500000000000000 
+            elseif selectedRebirth == "x10qa" then rebirthValue = 10000000000000000 
+            elseif selectedRebirth == "x50qa" then rebirthValue = 50000000000000000 
+            elseif selectedRebirth == "x500qa" then rebirthValue = 500000000000000000 
+            elseif selectedRebirth == "x5qi" then rebirthValue = 5000000000000000000 
+            elseif selectedRebirth == "x50qi" then rebirthValue = 50000000000000000000 
+            elseif selectedRebirth == "x100qi" then rebirthValue = 100000000000000000000 
+            elseif selectedRebirth == "x500qi" then rebirthValue = 500000000000000000000 
+            elseif selectedRebirth == "x1sx" then rebirthValue = 1000000000000000000000 
+            end
+
+            local args = { [1] = rebirthValue }
+            game:GetService("ReplicatedStorage"):WaitForChild("Rebirth"):FireServer(unpack(args))
+        end 
+        task.wait(0.1) 
+        if not autoRebirthEnabled then break end 
+    end 
+end)
+
+local EggSection = MainTab:CreateSection("Egg") 
+local eggList = {} 
+for _, egg in next, workspace.Eggs:GetChildren() do 
+    table.insert(eggList, egg.Name) 
+end 
+local selectedEgg = nil 
+EggSection:CreateDropdown("Select Egg", eggList, 1, function(option) 
+    selectedEgg = option 
+end) 
+local autoOpenEggs = false 
+EggSection:CreateToggle("Auto Open Eggs", function(state) 
+    autoOpenEggs = state 
+    while autoOpenEggs and selectedEgg do 
+        local args = {workspace.Eggs:FindFirstChild(selectedEgg)} 
+        game:GetService("ReplicatedStorage"):WaitForChild("EggHatchingRemote"):WaitForChild("HatchServer"):InvokeServer(unpack(args)) 
+        task.wait(0) 
+        if not autoOpenEggs then break end 
+    end 
+end) 
+EggSection:CreateLabel("Note", "Pets appear after rejoining") 
+EggSection:CreateButton("Rejoin", function() 
+    game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer) 
+end) 
+
+local DupeSection = DupeEquipTab:CreateSection("Duplicate Equip Pets") 
+DupeSection:CreateLabel("Note", "Equip 1 best pet to appear on menu") 
+local selectedPet = nil 
+local petList = {} 
+
+local function refreshPetList() 
+    petList = {} 
+    for _, pet in next, workspace._PlayerPets[game.Players.LocalPlayer.Name]:GetChildren() do 
+        table.insert(petList, pet.Name) 
+    end 
+    DupeSection:CreateDropdown("Select Pet", petList, 1, function(option) 
+        selectedPet = option 
+    end) 
+end 
+
+refreshPetList() 
+DupeSection:CreateButton("Refresh Pet List", function() 
+    refreshPetList() 
+end) 
+
+local autoEquipPets = false 
+DupeSection:CreateToggle("Auto Equip Selected Pets", function(state) 
+    autoEquipPets = state 
+    while autoEquipPets and selectedPet do 
+        local args = {selectedPet} 
+        game:GetService("ReplicatedStorage"):WaitForChild("EggHatchingRemote"):WaitForChild("EquipPet"):InvokeServer(unpack(args)) 
+        task.wait(0) 
+        if not autoEquipPets then break end 
+    end 
+end)
+
+local upgradeTypes = { "HatchSpeed", "More Gems", "Jump", "Inventory", "More Taps", "Luck", "Speed", "MaxPets" } 
+for _, upgrade in ipairs(upgradeTypes) do 
+    local autoUpgrade = false 
+    MainSection:CreateToggle("Auto Upgrade " .. upgrade, function(bool) 
+        autoUpgrade = bool 
+        while autoUpgrade do 
+            local args = {upgrade} 
+            game:GetService("ReplicatedStorage"):WaitForChild("Upgrade"):InvokeServer(unpack(args)) 
+            task.wait(0.2) 
+            if not autoUpgrade then break end 
+        end 
+    end) 
 end
