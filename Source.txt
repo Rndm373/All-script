@@ -1573,4 +1573,103 @@ function Library:CreateTab(name)
     return TabElements
 end
 
+local Library = {}
+
+function Library:CreateTab(name)
+    -- Implementasi tab
+    local tab = {}
+    function tab:CreateSection(name)
+        -- Implementasi section
+        local section = {}
+        
+        -- Menambahkan fitur baru
+
+        -- 1. Minimize Button
+        function section:CreateMinimizeButton()
+            local button = Instance.new("TextButton")
+            button.Text = "Minimize"
+            button.Size = UDim2.new(0, 100, 0, 50)
+            button.Parent = sectionFrame
+
+            local minimized = false
+            button.MouseButton1Click:Connect(function()
+                minimized = not minimized
+                sectionFrame.Visible = not minimized
+            end)
+        end
+
+        -- 2. Auto Refresh Dropdown
+        function section:CreateAutoRefreshDropdown(name, options, presetOption, callback)
+            local dropdown = Instance.new("Frame") -- Sesuaikan dengan UI Library Anda
+            dropdown.Name = name
+            dropdown.Parent = sectionFrame
+
+            local function UpdateDropdown(newOptions)
+                dropdown:ClearAllChildren()
+                for _, option in pairs(newOptions) do
+                    local button = Instance.new("TextButton")
+                    button.Text = option
+                    button.Parent = dropdown
+                    button.MouseButton1Click:Connect(function()
+                        callback(option)
+                    end)
+                end
+            end
+
+            UpdateDropdown(options)
+        end
+
+        -- 3. Auto Refresh Label
+        function section:CreateAutoRefreshLabel(name, updater)
+            local label = Instance.new("TextLabel")
+            label.Text = name
+            label.Parent = sectionFrame
+
+            local function UpdateLabel(newText)
+                label.Text = newText
+            end
+
+            updater(UpdateLabel)
+        end
+
+        -- 4. Interactive Slider
+        function section:CreateInteractiveSlider(name, minValue, maxValue, presetValue, precise, callback)
+            local sliderFrame = Instance.new("Frame") -- Sesuaikan dengan UI Library Anda
+            sliderFrame.Name = name
+            sliderFrame.Parent = sectionFrame
+
+            local dragging = false
+            local sliderHandle = Instance.new("Frame") -- Handle untuk slider
+            sliderHandle.Parent = sliderFrame
+
+            sliderHandle.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                end
+            end)
+
+            sliderHandle.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+
+            game:GetService("UserInputService").InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local newValue = math.clamp((input.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
+                    local scaledValue = math.floor(minValue + (maxValue - minValue) * newValue)
+                    if precise then
+                        scaledValue = math.round(scaledValue * 10) / 10
+                    end
+                    callback(scaledValue)
+                end
+            end)
+        end
+
+        return section
+    end
+    return tab
+end
+
 return Library
+
